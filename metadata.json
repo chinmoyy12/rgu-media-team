@@ -1,0 +1,6 @@
+{
+  "name": "Royal Global Media Team",
+  "description": "Official Media Team Portal of The Assam Royal Global University, Guwahati - Capturing Moments, Creating Stories, Preserving Memories.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

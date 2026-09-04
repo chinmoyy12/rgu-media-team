@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-xs: 480px;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+  color: #E7E5E4;
+  background-color: #050505;
+}
+
+@layer utilities {
+  .font-cinzel {
+    font-family: 'Cinzel', serif;
+  }
+  .font-playfair {
+    font-family: 'Playfair Display', serif;
+  }
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  /* Fluid Typography clamp() helpers */
+  .text-fluid-hero {
+    font-size: clamp(2.25rem, 7.5vw + 0.25rem, 6.5rem);
+    line-height: 1.05;
+  }
+
+  .text-fluid-title {
+    font-size: clamp(1.75rem, 4.5vw + 0.25rem, 3.5rem);
+    line-height: 1.15;
+  }
+
+  /* Animated Grid Overlay */
+  .animated-grid-bg {
+    background-size: 70px 70px;
+    background-image: 
+      linear-gradient(to right, rgba(242, 106, 46, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(242, 106, 46, 0.05) 1px, transparent 1px);
+    animation: gridShift 30s linear infinite;
+  }
+
+  .text-glow-orange {
+    text-shadow: 0 0 20px rgba(242, 106, 46, 0.6), 0 0 40px rgba(242, 106, 46, 0.25);
+  }
+
+  .shadow-glow-orange {
+    box-shadow: 0 0 30px -5px rgba(242, 106, 46, 0.4);
+  }
+
+  /* Frosted Glass Utilities */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-card-gradient {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .light .glass-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .light .glass-nav {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(242, 106, 46, 0.6), rgba(255, 255, 255, 0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Custom Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08080a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222228;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #F26A2E;
+}
+
+/* Light Mode Overrides */
+html.light body {
+  background-color: #F8F9FA;
+  color: #1A1A1E;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #F1F3F5;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #CED4DA;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Animation keyframes for subtle floating */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@keyframes gridShift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 70px 70px;
+  }
+}
