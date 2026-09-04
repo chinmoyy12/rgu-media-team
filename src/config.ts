@@ -46,8 +46,8 @@ export const config = {
     deadlineDate: "August 30, 2026",
     targetDeadlineMs: deadlineTimestamp,
     announcementBanner: "🔥 Recruitment Drive 2026-27 is LIVE! Apply before August 30, 2026 to join the Official RGU Media Team.",
-    contactPhone: "99575 06071",
-    officeLocation: "Block A, Media & PR Cell, Royal Global University Campus, Guwahati",
+    contactPhone: "99575 06071 / 8011664619",
+    officeLocation: "C BLOCK - 4TH FLOOR",
     whatsappAssistGroup: "https://chat.whatsapp.com/L301ratApTM5DxJ9F7M5EE",
   },
 

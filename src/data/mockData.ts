@@ -4,13 +4,41 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-1',
     name: 'Jitumoni Das',
-    position: 'Media Head',
+    position: 'Faculty Coordinator',
     department: 'Leadership & Administration',
     category: 'Head',
     hierarchyOrder: 1,
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    photoUrl: 'https://i.ibb.co/CsppbfG8/cropped-circle-image.png',
     email: 'jitumoni.das@rgu.ac.in',
-    bio: 'Guiding the university digital vision, media strategy, and institutional storytelling with over 10 years of experience.',
+    bio: `The Visionary of Assam
+An Inspiring Profile of Dr. Kaayann JD
+
+Dr. Kaayann JD (born Jitumoni Das) stands as a modern-day renaissance man in Assam’s cultural landscape. A visionary director, writer, composer, and cultural activist from Nahira, Lower Assam—and the proud son of the late Akan Chandra Das and Mrs. Lakshmipriya Das— his life is a powerful testament to the indomitable human will and the belief that true art is rooted in a profound love for one’s people.
+
+The Theatrical Forge: A Journey of Relentless Practice
+His artistic awakening took a decisive turn following a transformative theatre workshop organized by the National School of Drama (NSD). Rather than resting on the knowledge gained, he forged his own creative identity through grueling, relentless practice and deep self-discipline. He drew immense inspiration from the profound physical theatre traditions of Padma Shri Heisnam Kanhailal and Padma Shri Ratan Thiyam, seamlessly weaving their indigenous, spiritual depth with the dynamic, expressive techniques of European and North American physical theatre styles.
+
+This rigorous dedication led him to found the esteemed repertory Creative Mind. His unmistakable craftsmanship quickly made him a sought-after mentor, serving as camp director, acting expert, and faculty across numerous workshops for NSD (TIE Company/ANGANA), Gauhati University, Axom Natya Xanmilan, and NSUI across Jamugurihat, Jharobori, Silpukhuri, and his native Nahira.
+
+A Revolution in Assamese Media
+Transitioning his storytelling prowess to the screen, he learned the craft intimately as an assistant director to the late Assamese cine legend Bidyut Chakraborty (Andhere Se Ujale Ki Aour, Gandhi Ahisil, Prahari, Sougandh, Jiyai Thokar Axare). His talent eventually took him to the country's dream world, Mumbai, working with Filmitch Production on the Hindi feature film Baromas. Yet, driven by an untiring love for his homeland, he left the glitz of Bollywood to return to Assam—a decision that sparked a revolution in regional broadcasting.
+
+His trailblazing career across television and film includes:
+• Pioneering Storytelling: Directing, writing, and editing the groundbreaking true-story serial Vastab (NE Hi-Fi); creating celebrated serials and telefilms like Akash Chuboloi Mon (Director/Editor, Prag News), Dawar (DY365), Dainy, and Mohayodha (video film editor); and co-directing Hai Hai (Rengoni TV).
+• Broadcast Leadership: Shaping the industry as a Senior Producer, Director, and Creative Director at Prag News, where he spearheaded a massive channel restructuring, launched 13 new multi-genre programs, and directed the iconic 2014–15 promos. He also directed serials for Rengoni TV and served as Producer at DY365 (DY Bihurani 2011 & 2012) and for Bindaas Masti (NE Hi-Fi).
+• Cinematography & Commercial Vision: Serving as Director of Photography for the short film Xopunpriya and the music video Madhukantha; co-directing John Abraham’s North East United FC promotional music video; and directing and editing major TV commercials for Kinsberg Golf Accessories, King Chilly & Hotel Gateway Grandeur, and Disang Resort.
+
+The Polymath: Music, Literature, and Technical Mastery
+Dr. Kaayann JD’s creative footprint extends far beyond the camera. He is a prolific literary voice, having authored Swogokti and translated Dr. Surjya Kumar Bhuyan’s Podya Buranji. As a lyricist and composer, he has penned and scored over 50 Assamese songs spanning folk, classical, hip-hop, R&B, pop, and modern genres.
+
+This creative breadth is anchored by an absolute mastery of technology. He is highly proficient across an arsenal of industry-standard software—including FCP, Premiere Pro, DaVinci Resolve, InDesign, Logic Pro, FL Studio, Cubase, RipX, and Studio One—while maintaining expert command over all formats of still and video camera operation.
+
+Cultivating the Grassroots and Building a Legacy
+Today, he continues to light the way for the next generation. While leading media endeavors at Royal Global University’s Royal Times, he has imparted his wisdom as faculty and guest coordinator at the Gauhati University Centre for Performing Arts, AIMT Guwahati, NPS International School, and JNV Doomordolong.
+
+In recognition of his monumental contributions to art and society, he was conferred an Honorary Doctorate by Integrated Global University in 2025, formally presented in August 2026 by Meghalaya's ex-Cabinet Minister Alexander Laloo Hek.
+
+Yet, he has never forgotten his roots. In his native village of Nahira, he founded FolkLAB—a visionary cultural sanctuary providing the local community with free, expert-led training in folk music, dance, theatre, and literature. In every endeavor, Dr. Kaayann JD proves that with enough passion, hard work, and vision, one person can indeed elevate the cultural consciousness of an entire state.`,
     socials: {
       linkedin: 'https://linkedin.com',
       instagram: 'https://instagram.com',
@@ -20,7 +48,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-2',
     name: 'Ashiqul Haque',
-    position: 'Executive Media Head',
+    position: 'VCD',
     department: 'Executive Board',
     category: 'Executive',
     hierarchyOrder: 2,
@@ -35,7 +63,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-3',
     name: 'Akib Irfan',
-    position: 'Media Chief (Student Body)',
+    position: 'Chief (Admin)',
     department: 'Student Body Council',
     category: 'Chief',
     hierarchyOrder: 3,
@@ -49,12 +77,12 @@ export const teamMembers: TeamMember[] = [
   },
   {
     id: 'mem-4',
-    name: 'Esha Konwar',
-    position: 'Deputy Head',
+    name: 'Bedanga Malakar',
+    position: 'Editing Cell Head',
     department: 'Operations & Planning',
     category: 'Deputy',
     hierarchyOrder: 4,
-    photoUrl: 'https://i.ibb.co/FbNt2Gfr/Whats-App-Image-2026-08-05-at-8-07-00-PM-1.png',
+    photoUrl: 'https://i.ibb.co/ZpcnBW4M/cropped-circle-image-3.png',
     email: 'esha.konwar@rgu.ac.in',
     bio: 'Managing event schedules, crew deployments, and cross-functional quality assurance.',
     socials: {
@@ -65,7 +93,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-5',
     name: 'Chinmoy Thakuria',
-    position: 'Deputy Head',
+    position: 'Chief (Videography & Editing)',
     department: 'Social Media Management',
     category: 'Deputy',
     hierarchyOrder: 5,
@@ -79,8 +107,8 @@ export const teamMembers: TeamMember[] = [
   },
   {
     id: 'mem-6',
-    name: 'Gargi Sarma',
-    position: 'Coordinator',
+    name: 'GARGI SHARMA',
+    position: 'Councillor',
     department: 'Media Logistics',
     category: 'Coordinator',
     hierarchyOrder: 6,
@@ -94,7 +122,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-7',
     name: 'Transmarine K Kashyap',
-    position: 'Coordinator',
+    position: 'Councillor',
     department: 'Media Logistics',
     category: 'Coordinator',
     hierarchyOrder: 7,
@@ -139,7 +167,7 @@ export const teamMembers: TeamMember[] = [
   {
     id: 'mem-11',
     name: 'JONTI DAS',
-    position: 'Head of Photography',
+    position: 'Chief (Photography)',
     department: 'Photography',
     category: 'Department Head',
     hierarchyOrder: 11,
@@ -152,12 +180,12 @@ export const teamMembers: TeamMember[] = [
   },
   {
     id: 'mem-12',
-    name: 'Bulbul Hussain',
+    name: 'Priyanuj Tamuli',
     position: 'Head of Podcast',
     department: 'Podcast & Audio',
     category: 'Department Head',
     hierarchyOrder: 12,
-    photoUrl: 'https://i.ibb.co/93ZdJB2z/Whats-App-Image-2026-08-01-at-7-59-06-PM.png',
+    photoUrl: 'https://i.ibb.co/m5gCprhq/cropped-circle-image-2.png',
     email: 'bulbul.hussain@rgu.ac.in',
     bio: 'Host and director of "Podcasts", for managing the interface and equipments while interviewing guest dignitaries, faculty, and student achievers.',
     socials: {
@@ -181,14 +209,14 @@ export const teamMembers: TeamMember[] = [
   },
   {
     id: 'mem-14',
-    name: 'Harshita Deka',
+    name: 'Abhik Das',
     position: 'Head of Content Design',
     department: 'Content Design & Graphics',
     category: 'Department Head',
     hierarchyOrder: 14,
-    photoUrl: 'https://i.ibb.co/W47z7vG5/IMG-8263-edited.png',
+    photoUrl: 'https://i.ibb.co/qM0tLB1S/cropped-circle-image-1.png',
     email: 'harshita.deka@rgu.ac.in',
-    bio: "Harshita Deka\nContent Design Head\nDepartment of Applied Psychology | 5th Semester\nAssam Royal Global University\n\nAs the Content Design Head, I lead the creation of engaging digital content that promotes the University’s Media Team and highlights campus events, achievements, and initiatives. Through creative storytelling, graphic design, photography, videography, and social media management, I ensure impactful visual communication that strengthens the Media Team’s presence and enhances the University’s digital identity.",
+    bio: "Abhik Das\nContent Design Head\nDepartment of Applied Psychology | 5th Semester\nAssam Royal Global University\n\nAs the Content Design Head, I lead the creation of engaging digital content that promotes the University’s Media Team and highlights campus events, achievements, and initiatives. Through creative storytelling, graphic design, photography, videography, and social media management, I ensure impactful visual communication that strengthens the Media Team’s presence and enhances the University’s digital identity.",
     socials: {
       instagram: 'https://instagram.com',
       linkedin: 'https://linkedin.com'
@@ -239,7 +267,7 @@ export const departmentsData: Department[] = [
     shortDesc: 'Broadcasting student voices, faculty insights, and guest interviews.',
     fullDesc: 'Host of "Royal Talks Podcast", featuring multi-microphone studio setups, sound design, and guest spotlight conversations.',
     iconName: 'Mic',
-    headName: 'Bulbul Hussain',
+    headName: 'Priyanuj Tamuli',
     memberCount: 8,
     skills: ['Multi-Mic Sound Setup', 'Audition / Logic Pro', 'Interview Hosting', 'Acoustic Engineering'],
     featuredWorksCount: 48,
@@ -251,7 +279,7 @@ export const departmentsData: Department[] = [
     shortDesc: 'Copywriting, digital storytelling, and creative content curation.',
     fullDesc: 'Crafting press releases, social media captions, magazine editorials, and compelling storytelling frameworks.',
     iconName: 'FileText',
-    headName: 'Harshita Deka',
+    headName: 'Abhik Das',
     memberCount: 12,
     skills: ['Copywriting', 'SEO Writing', 'Editorial Planning', 'Brand Tone Alignment'],
     featuredWorksCount: 310,
@@ -263,7 +291,7 @@ export const departmentsData: Department[] = [
     shortDesc: 'High-impact visual identity, event posters, and digital artwork.',
     fullDesc: 'Creating visual branding for mega cultural fests, academic symposia, social media banners, and print publications.',
     iconName: 'Palette',
-    headName: 'Harshita Deka (Lead)',
+    headName: 'Abhik Das (Lead)',
     memberCount: 15,
     skills: ['Adobe Photoshop', 'Illustrator', 'Figma', 'Typography', 'Brand Identity Systems'],
     featuredWorksCount: 520,
@@ -299,7 +327,7 @@ export const departmentsData: Department[] = [
     shortDesc: 'Preserving historical archives, media assets, and press logs.',
     fullDesc: 'Cataloging high-resolution media vaults, press clippings, and official university historical archives.',
     iconName: 'Archive',
-    headName: 'Gargi Sarma',
+    headName: 'GARGI SHARMA',
     memberCount: 9,
     skills: ['Digital Asset Management', 'Metadata Tagging', 'Press Archiving', 'Cloud Storage Systems'],
     featuredWorksCount: 950,
@@ -368,7 +396,7 @@ export const galleryItems: GalleryItem[] = [
     title: 'International Media Workshop with Industry Experts',
     category: 'Workshops',
     imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=1200&q=80',
-    photographer: 'Harshita Deka',
+    photographer: 'Abhik Das',
     date: 'December 10, 2024',
     location: 'Seminar Hall B',
     exif: { camera: 'Sony A7S III', lens: 'FE 50mm f/1.2 GM', iso: '640', aperture: 'f/1.8' }
@@ -388,7 +416,7 @@ export const galleryItems: GalleryItem[] = [
     title: 'Royal Talks Podcast Live Recording Session',
     category: 'Videography',
     imageUrl: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1200&q=80',
-    photographer: 'Bulbul Hussain',
+    photographer: 'Priyanuj Tamuli',
     date: 'January 28, 2025',
     location: 'Media Studio 1',
     exif: { camera: 'Blackmagic Pocket 6K Pro', lens: 'Sigma 18-35mm', iso: '400', aperture: 'f/1.8' }

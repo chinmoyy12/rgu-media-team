@@ -7,17 +7,22 @@ export const ContactSection: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   const roles = [
-    { name: 'Photography', icon: '📸', desc: 'Event coverage & photojournalism' },
-    { name: 'Videography', icon: '🎥', desc: 'Cinematic shoots & reel creation' },
-    { name: 'Video Editing', icon: '🎬', desc: 'Premiere Pro & DaVinci editing' },
-    { name: 'Graphic Design', icon: '🎨', desc: 'Poster design, branding & UI' },
-    { name: 'Content Writing', icon: '✍️', desc: 'Blogs, scripts & press releases' },
-    { name: 'Podcasting', icon: '🎙️', desc: 'Podcast hosting & audio tech' },
-    { name: 'Social Media', icon: '📱', desc: 'Handles & community management' },
+    { name: 'Photography', icon: '📸', desc: 'Event coverage & photojournalism', link: 'https://chat.whatsapp.com/JcYuIQGDNRzEnYJyeGygy9?mode=gi_t' },
+    { name: 'Videography', icon: '🎥', desc: 'Cinematic shoots & reel creation', link: 'https://chat.whatsapp.com/FuRrM4oIKoaFU5DQ9RdoTE?mode=gi_t' },
+    { name: 'Video Editing', icon: '🎬', desc: 'Premiere Pro & DaVinci editing', link: 'https://chat.whatsapp.com/FuRrM4oIKoaFU5DQ9RdoTE?mode=gi_t' },
+    { name: 'Mobile Photography', icon: '📱', desc: 'Smartphone shoots & storytelling', link: 'https://chat.whatsapp.com/JcYuIQGDNRzEnYJyeGygy9?mode=gi_t' },
+    { name: 'Content Design', icon: '✍️', desc: 'Blogs, scripts & press releases', link: 'https://chat.whatsapp.com/BVYMV5UGeFBIdoYZUCGwgj?mode=gi_t' },
+    { name: 'Podcasting', icon: '🎙️', desc: 'Podcast hosting & audio tech', link: 'https://chat.whatsapp.com/K5JmKvjz6MV3C5X9NQcxJR?mode=gi_t' },
+    { name: 'Reel', icon: '🎬', desc: 'Short-form videos & trends', link: 'https://chat.whatsapp.com/ExgvnZZCvLC7HUYgcvjtmj?mode=gi_t' },
   ];
 
   const handleApplyClick = () => {
-    window.open(config.googleFormUrl, '_blank', 'noopener,noreferrer');
+    const roleObj = roles.find(r => r.name === selectedRole);
+    if (roleObj && roleObj.link) {
+      window.open(roleObj.link, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open(config.googleFormUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -57,8 +62,8 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-stone-400 block text-xs font-semibold">CAMPUS LOCATION</span>
-                    <strong className="text-white">{config.universityName}</strong>
-                    <p className="text-stone-400 text-xs mt-0.5">{config.universityLocation}</p>
+                    <strong className="text-white">{config.recruitment.officeLocation}</strong>
+                    <p className="text-stone-400 text-xs mt-0.5">{config.universityName}</p>
                   </div>
                 </div>
 
@@ -139,7 +144,7 @@ export const ContactSection: React.FC = () => {
                 <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
                   <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>RECRUITMENT OPEN • DEADLINE: AUG 5, 2026</span>
+                    <span>RECRUITMENT OPEN •</span>
                   </div>
                   <span className="text-xs text-stone-400 font-mono">Academic Session 2026-27</span>
                 </div>
@@ -201,14 +206,14 @@ export const ContactSection: React.FC = () => {
                   onClick={handleApplyClick}
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
-                  className="group w-full py-5 px-8 rounded-2xl bg-gradient-to-r from-[#F26A2E] via-[#FF7A3D] to-amber-500 text-white font-extrabold text-base sm:text-lg flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(242,106,46,0.6)] hover:shadow-[0_0_60px_rgba(242,106,46,0.9)] hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                  className="group w-full py-5 px-8 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-base sm:text-lg flex items-center justify-center gap-3 shadow-[0_0_25px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_rgba(16,185,129,0.8)] hover:scale-[1.02] transition-all duration-300 cursor-pointer"
                 >
-                  <FileText className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                  <span>APPLY HERE VIA GOOGLE FORM</span>
+                  <MessageSquare className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                  <span>JOIN THE SQUAD</span>
                   <ArrowRight className={`w-5 h-5 transition-transform duration-300 ${isHovered ? 'translate-x-2' : ''}`} />
                 </button>
                 <p className="text-center font-inter text-xs text-stone-400 mt-3">
-                  Clicking opens the official Google Form application in a new tab.
+                  Clicking opens the WhatsApp group invitation in a new tab.
                 </p>
               </div>
             </div>

@@ -34,9 +34,9 @@ export const EventCountdown: React.FC = () => {
 
   if (timeLeft.expired) {
     return (
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-semibold animate-color-cycle">
         <Clock className="w-4 h-4" />
-        <span>Applications Currently Closed for this term</span>
+        <span>Application will be closing soon - join Quick</span>
       </div>
     );
   }

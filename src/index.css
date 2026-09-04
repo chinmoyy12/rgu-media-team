@@ -191,3 +191,16 @@ html.light ::-webkit-scrollbar-thumb {
     background-position: 70px 70px;
   }
 }
+
+@keyframes colorCycle {
+  0%, 100% { color: lime; }
+  14% { color: blue; }
+  28% { color: red; }
+  42% { color: green; }
+  57% { color: white; }
+  71% { color: gold; }
+  85% { color: cyan; }
+}
+.animate-color-cycle {
+  animation: colorCycle 4s linear infinite;
+}

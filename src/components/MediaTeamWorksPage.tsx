@@ -1,7 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Sparkles, Camera, Film, Image as ImageIcon, ExternalLink, Calendar, Layers, ShieldCheck, Award } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MediaGallerySection } from './MediaGallerySection';
 import { GallerySection } from './GallerySection';
 
 interface MediaTeamWorksPageProps {
@@ -14,9 +13,23 @@ export const MediaTeamWorksPage: React.FC<MediaTeamWorksPageProps> = ({
   onApplyClick,
 }) => {
   return (
-    <div className="pt-24 pb-20 min-h-screen bg-[#050505] text-stone-100 relative">
+    <div className="pt-24 pb-20 min-h-screen text-stone-100 relative">
+      {/* Background Video */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[#050505]">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover opacity-30"
+        >
+          <source src="https://ik.imagekit.io/w61rg4ucfs/MEDIA%20Animation.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-[#050505]/60 to-[#050505]" />
+      </div>
+
       {/* Glow Effects */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[180px] pointer-events-none" />
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[180px] pointer-events-none z-0" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Top Header Navigation */}
@@ -91,11 +104,6 @@ export const MediaTeamWorksPage: React.FC<MediaTeamWorksPageProps> = ({
               <div className="font-inter text-[11px] text-stone-400">Archived Media</div>
             </div>
           </motion.div>
-        </div>
-
-        {/* Shipped RGU MEDIA PHOTO GALLERY Component */}
-        <div className="rounded-3xl border border-stone-800/80 bg-stone-950/40 p-2 sm:p-6 mb-12 shadow-2xl">
-          <MediaGallerySection />
         </div>
 
         {/* Shipped Instagram / Socials Showcase */}

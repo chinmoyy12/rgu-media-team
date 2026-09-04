@@ -55,6 +55,20 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
 
   return (
     <div className="min-h-screen bg-[#050505] text-stone-100 pt-28 pb-20 relative overflow-hidden">
+      {/* Background Video */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[#050505]">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover opacity-30"
+        >
+          <source src="https://ik.imagekit.io/w61rg4ucfs/MEDIA%20Animation.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-[#050505]/60 to-[#050505]" />
+      </div>
+
       {/* Particle Animated Background */}
       <ParticleBackground particleCount={80} interactive={true} />
 
