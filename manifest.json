@@ -1,0 +1,21 @@
+{
+  "short_name": "RGU Media",
+  "name": "Media Team | The Assam Royal Global University",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='38' fill='%23050505'/><path d='M96 25 L165 65 L165 125 L96 165 L27 125 L27 65 Z' fill='none' stroke='%23F26A2E' stroke-width='10'/><circle cx='96' cy='95' r='35' fill='%23F26A2E'/></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23050505'/><path d='M256 60 L440 166 L440 346 L256 452 L72 346 L72 166 Z' fill='none' stroke='%23F26A2E' stroke-width='24'/><circle cx='256' cy='256' r='90' fill='%23F26A2E'/></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#050505",
+  "theme_color": "#F26A2E",
+  "display": "standalone",
+  "orientation": "portrait"
+}
