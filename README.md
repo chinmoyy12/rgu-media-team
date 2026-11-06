@@ -50,6 +50,11 @@ The official website of the **Media Team** at **The Assam Royal Global Universit
 
 ## ✨ Latest Updates
 
+- **3D Night-Valley Hero:** A three.js flower valley with bloom, click ripples, cursor ember trail, shooting stars, bokeh and an optional ambient soundtrack.
+- **3D Work Reel:** A scroll-driven ribbon of the team's photos and reel that flies into a grid, with velocity bend, colour split and liquid hover.
+- **Kinetic Sections & Redesign:** Velocity marquee, scroll-lit manifesto, 3D card tilt, heading reveals, smooth scrolling, a new navbar and full-screen menu.
+- **Admin Panel (Supabase):** Secure sign-in with password reset; edit links, members, gallery, FAQ, text, appearance, sections and SEO; upload photos; publish live with version history. See [`supabase/README.md`](supabase/README.md).
+
 - **Animated Backgrounds:** Added looping background videos to the Media Team Works and Members Info pages for a cinematic feel.
 - **Direct Recruitment Links:** Upgraded the application process with direct WhatsApp group invite links for specific departments (Reel, Mobile Photography, Content Design, etc.).
 - **Dynamic Recruitment Banner:** Integrated a live, color-cycling animation for the "Application will be closing soon" recruitment banner.
@@ -66,7 +71,8 @@ The official website of the **Media Team** at **The Assam Royal Global Universit
 | **Icons** | Lucide React |
 | **Fonts** | Inter · Cinzel · Playfair Display · Poppins (Google Fonts) |
 | **Hosting** | GitHub Pages |
-| **Effects** | Canvas-based particle system, custom cursor, confetti |
+| **Effects** | three.js (WebGL shaders, bloom), Lenis smooth scroll, custom cursor |
+| **Backend** | Supabase (Auth, Postgres with row-level security, Storage) |
 
 ---
 
@@ -183,6 +189,12 @@ npm run build
 
 The optimized output will be in the `dist/` directory.
 
+### Admin panel setup
+
+Create `.env.local` with the Supabase project's public URL and publishable key
+(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) — see [`supabase/README.md`](supabase/README.md).
+These must be present when running `npm run build`, so the deployed site can reach Supabase.
+
 ---
 
 ## ⌨️ Keyboard Shortcuts
@@ -194,6 +206,8 @@ The optimized output will be in the `dist/` directory.
 | `↑` / `↓` | Navigate search results |
 | `Enter` | Select result |
 | `Esc` | Close modals |
+| `Ctrl + Shift + A` | Open the admin panel |
+| `Ctrl + S` | Save draft (inside the admin panel) |
 
 ---
 

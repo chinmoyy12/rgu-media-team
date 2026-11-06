@@ -1,4 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
+import { startSmoothScroll } from './lib/smoothScroll';
+import { startFx } from './lib/fx';
+import { subscribe, getVersion, siteText, siteSettings, isDraft } from './content/store';
+import { AdminPanel } from './components/AdminPanel';
+import { VelocityMarquee, Manifesto } from './components/KineticSections';
+import { CustomCursor } from './components/CustomCursor';
+import { MotionRibbonSection } from './components/MotionRibbonSection';
 import { AnimatePresence, motion } from 'motion/react';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ScrollProgress } from './components/ScrollProgress';
@@ -30,6 +37,27 @@ export default function App() {
   const [isShowreelModalOpen, setIsShowreelModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  // bumps whenever admin-edited content is applied, so the page re-renders with it
+  const contentVersion = useSyncExternalStore(subscribe, getVersion);
+
+  const sec = siteSettings.sections;
+  const look = siteSettings.appearance;
+
+  useEffect(() => (look.smoothScroll ? startSmoothScroll() : undefined), [look.smoothScroll]);
+  useEffect(() => startFx(), []);
+  useEffect(() => {
+    // Ctrl/⌘ + Shift + A opens the admin panel
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setIsAdminOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const handleOpenApplyModal = () => setIsFormModalOpen(true);
   const handleCloseApplyModal = () => setIsFormModalOpen(false);
 
@@ -59,6 +87,10 @@ export default function App() {
       {/* Ultra-Premium Loading Screen */}
       <LoadingScreen />
 
+      {/* Global film grain + custom magnetic cursor */}
+      <div className="fx-grain" aria-hidden="true" />
+      {look.cursor && <CustomCursor />}
+
       {/* Scroll Progress Bar at top */}
       <ScrollProgress />
 
@@ -66,10 +98,12 @@ export default function App() {
       {currentPage === 'home' && <ScrollIndicator />}
 
       {/* Top Announcement Bar */}
-      <AnnouncementBanner onApplyClick={handleOpenApplyModal} />
+      <AnnouncementBanner key={`ab-${contentVersion}`} onApplyClick={handleOpenApplyModal} />
 
       {/* Glass Header Navigation */}
       <Navbar
+        onAdminClick={() => setIsAdminOpen(true)}
+        isDraft={isDraft()}
         onApplyClick={handleOpenApplyModal}
         onSearchOpen={handleOpenSearchModal}
         onMembersClick={handleNavigateToMembers}
@@ -81,7 +115,7 @@ export default function App() {
       {/* Main Content View Switcher with AnimatePresence */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentPage}
+          key={`${currentPage}-${contentVersion}`}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
@@ -105,54 +139,34 @@ export default function App() {
                 onMembersClick={handleNavigateToMembers}
               />
 
-              <SectionDivider />
+              {/* Scroll-driven 3D ribbon of the team's work */}
+              {sec.ribbon && <MotionRibbonSection onWorksClick={handleNavigateToWorks} onApplyClick={handleOpenApplyModal} />}
 
-              {/* Two-Column About Section & Animated Statistics */}
-              <AnimatedSection>
-                <AboutSection />
-              </AnimatedSection>
+              {/* Kinetic type band + scroll-lit manifesto */}
+              {sec.marquee && <VelocityMarquee words={siteText.marquee} />}
+              {sec.manifesto && (
+                <Manifesto label={siteText.manifestoLabel} text={siteText.manifesto} accent={siteText.manifestoAccent} />
+              )}
 
-              <SectionDivider variant="wave" />
-
-              {/* Specialized Creative Wings / Departments */}
-              <AnimatedSection>
-                <DepartmentsSection onApplyClick={handleOpenApplyModal} />
-              </AnimatedSection>
-
-              <SectionDivider variant="wave" />
-
-              {/* Media Team Family Showcase */}
-              <AnimatedSection>
-                <MediaTeamFamilySection />
-              </AnimatedSection>
-
-              <SectionDivider variant="wave" />
-
-              {/* Why Join the Media Team Section */}
-              <AnimatedSection>
-                <WhyJoinSection onApplyClick={handleOpenApplyModal} />
-              </AnimatedSection>
-
-              <SectionDivider />
-
-              {/* Join the Media Team Recruitment Hub */}
-              <AnimatedSection>
-                <JoinUsSection onApplyClick={handleOpenApplyModal} />
-              </AnimatedSection>
-
-              <SectionDivider variant="wave" />
-
-              {/* FAQ Accordion */}
-              <AnimatedSection>
-                <FAQSection />
-              </AnimatedSection>
-
-              <SectionDivider />
-
-              {/* Split Contact Form & Map */}
-              <AnimatedSection>
-                <ContactSection />
-              </AnimatedSection>
+              {/* Content sections — each can be switched off in Admin → Sections */}
+              {(
+                [
+                  ['about', <AboutSection />, 'line'],
+                  ['departments', <DepartmentsSection onApplyClick={handleOpenApplyModal} />, 'wave'],
+                  ['family', <MediaTeamFamilySection />, 'wave'],
+                  ['whyJoin', <WhyJoinSection onApplyClick={handleOpenApplyModal} />, 'wave'],
+                  ['joinUs', <JoinUsSection onApplyClick={handleOpenApplyModal} />, 'line'],
+                  ['faq', <FAQSection />, 'wave'],
+                  ['contact', <ContactSection />, 'line'],
+                ] as const
+              )
+                .filter(([k]) => sec[k])
+                .map(([k, node, divider]) => (
+                  <React.Fragment key={k}>
+                    <SectionDivider variant={divider === 'wave' ? 'wave' : undefined} />
+                    <AnimatedSection>{node}</AnimatedSection>
+                  </React.Fragment>
+                ))}
             </main>
           )}
         </motion.div>
@@ -183,6 +197,9 @@ export default function App() {
         onClose={handleCloseSearchModal}
         onApplyClick={handleOpenApplyModal}
       />
+
+      {/* Admin settings (links, members, text) */}
+      <AdminPanel open={isAdminOpen} onClose={() => setIsAdminOpen(false)} onOpenRequest={() => setIsAdminOpen(true)} />
 
       {/* Keyboard Shortcuts (?) */}
       <KeyboardShortcutsModal />

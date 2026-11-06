@@ -1,77 +1,79 @@
 import React, { useEffect, useState } from 'react';
-import { UniversityLogo } from './UniversityLogo';
 
 interface LoadingScreenProps {
   onLoaded?: () => void;
 }
 
+const WORD = 'MEDIA TEAM';
+
+/** Minimal cinematic loader: counter + letter reveal, lifts away once the 3D valley has its first frame. */
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
   const [progress, setProgress] = useState(0);
-  const [isDone, setIsDone] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setTimeout(() => {
-            setIsDone(true);
-            if (onLoaded) onLoaded();
-          }, 100);
-          return 100;
-        }
-        const step = Math.floor(Math.random() * 25) + 25;
-        return Math.min(prev + step, 100);
-      });
-    }, 25);
+    const t0 = performance.now();
+    let valleyReady = false;
+    const onValley = () => (valleyReady = true);
+    window.addEventListener('valley:loaded', onValley);
+    // if the hero isn't on this page, don't wait for it
+    const noHero = window.setTimeout(() => {
+      if (!document.getElementById('home')) valleyReady = true;
+    }, 300);
+    let raf = 0;
+    const tick = () => {
+      const el = performance.now() - t0;
+      const cap = valleyReady || el > 4500 ? 100 : 88;
+      setProgress((p) => Math.min(cap, p + Math.max(0.6, (cap - p) * 0.06)));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(noHero);
+      window.removeEventListener('valley:loaded', onValley);
+    };
+  }, []);
 
-    return () => clearInterval(timer);
-  }, [onLoaded]);
+  useEffect(() => {
+    if (progress >= 100 && !ready) setReady(true);
+  }, [progress, ready]);
 
-  if (isDone) return null;
+  useEffect(() => {
+    if (!ready) return;
+    const a = window.setTimeout(() => setLeaving(true), 250);
+    const b = window.setTimeout(() => {
+      setDone(true);
+      onLoaded?.();
+    }, 1350);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [ready, onLoaded]);
+
+  if (done) return null;
 
   return (
-    <div
-      className={`fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-[#050505] transition-opacity duration-300 ${
-        progress >= 100 ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
-    >
-      {/* Background Animated Ambient Light */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#F26A2E]/15 rounded-full blur-[100px] animate-pulse" />
-
-      <div className="relative z-10 flex flex-col items-center max-w-md px-6 text-center">
-        {/* Animated University Seal Logo */}
-        <div className="relative mb-6">
-          <div className="absolute -inset-4 rounded-full bg-[#F26A2E]/20 blur-xl animate-ping opacity-50" />
-          <UniversityLogo variant="loader" showText={false} />
-        </div>
-
-        {/* Title branding */}
-        <h1 className="font-cinzel text-2xl md:text-3xl font-extrabold tracking-widest text-white mb-1">
-          THE ASSAM ROYAL GLOBAL UNIVERSITY
-        </h1>
-        <div className="flex items-center gap-3 mb-8">
-          <span className="h-[1px] w-8 bg-[#F26A2E]" />
-          <p className="font-inter text-sm font-bold tracking-[0.3em] text-[#F26A2E] text-glow-orange">
-            MEDIA TEAM
-          </p>
-          <span className="h-[1px] w-8 bg-[#F26A2E]" />
-        </div>
-
-        {/* Progress Bar Container */}
-        <div className="w-full bg-stone-900/80 rounded-full h-1.5 p-0.5 border border-stone-800 relative overflow-hidden mb-3">
-          <div
-            className="bg-gradient-to-r from-[#F26A2E] via-amber-500 to-[#F26A2E] h-full rounded-full transition-all duration-200 shadow-[0_0_12px_#F26A2E]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Counter and Tagline */}
-        <div className="flex items-center justify-between w-full font-inter text-xs text-stone-400">
-          <span className="tracking-wider">GUWAHATI, ASSAM</span>
-          <span className="font-mono text-[#F26A2E] font-bold">{progress}%</span>
-        </div>
+    <div className={`loader-root ${leaving ? 'leave' : ''}`} role="status" aria-label="Loading">
+      <div className="loader-inner">
+        <span className="loader-dot" />
+        <p className="loader-word" aria-hidden="true">
+          {Array.from(WORD).map((c, i) => (
+            <span key={i} style={{ animationDelay: `${i * 60}ms` }}>
+              {c === ' ' ? ' ' : c}
+            </span>
+          ))}
+        </p>
+        <p className="loader-sub">The Assam Royal Global University</p>
       </div>
+      <div className="loader-foot">
+        <span>GUWAHATI · ASSAM</span>
+        <span className="loader-count">{String(Math.floor(progress)).padStart(3, '0')}</span>
+      </div>
+      <div className="loader-bar" style={{ transform: `scaleX(${progress / 100})` }} />
     </div>
   );
 };

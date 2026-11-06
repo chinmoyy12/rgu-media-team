@@ -40,12 +40,14 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
   id,
 }) => {
   const sectionVariants: Variants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 60, scale: 0.98, filter: 'blur(10px)' },
     visible: {
       opacity: 1,
       y: 0,
+      scale: 1,
+      filter: 'blur(0px)',
       transition: {
-        duration: 0.75,
+        duration: 1.1,
         ease: [0.16, 1, 0.3, 1],
         delay: delay,
         staggerChildren: staggerChildren,

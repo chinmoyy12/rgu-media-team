@@ -1,98 +1,86 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
+/** Smooth dot + lagging ring cursor with magnetic pull on buttons and links. */
 export const CustomCursor: React.FC = () => {
-  const [position, setPosition] = useState({ x: -100, y: -100 });
-  const [trailPosition, setTrailPosition] = useState({ x: -100, y: -100 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const dot = useRef<HTMLDivElement | null>(null);
+  const ring = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Only enable on non-touch desktop devices
-    if (window.matchMedia('(pointer: coarse)').matches) {
-      return;
-    }
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+    const d = dot.current!,
+      r = ring.current!;
+    let x = -100,
+      y = -100,
+      rx = -100,
+      ry = -100,
+      scale = 1,
+      targetScale = 1,
+      raf = 0,
+      shown = false;
+    let magnet: HTMLElement | null = null;
 
-    setIsVisible(true);
-
-    const onMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-
-      // Check if hovering over interactive elements
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'BUTTON' ||
-          target.tagName === 'A' ||
-          target.tagName === 'INPUT' ||
-          target.closest('button') ||
-          target.closest('a') ||
-          target.getAttribute('role') === 'button' ||
-          target.classList.contains('cursor-pointer'))
-      ) {
-        setIsHovered(true);
-      } else {
-        setIsHovered(false);
+    const move = (e: PointerEvent) => {
+      x = e.clientX;
+      y = e.clientY;
+      if (!shown) {
+        shown = true;
+        rx = x;
+        ry = y;
+        d.style.opacity = r.style.opacity = '1';
+      }
+      const t = (e.target as HTMLElement | null)?.closest?.('a,button,[role="button"],input,textarea,select,.cursor-pointer') as HTMLElement | null;
+      if (t !== magnet) {
+        if (magnet) magnet.style.transform = '';
+        magnet = t && (t.tagName === 'BUTTON' || t.tagName === 'A') && t.offsetWidth < 260 ? t : null;
+      }
+      targetScale = t ? 2.1 : 1;
+      if (magnet) {
+        const b = magnet.getBoundingClientRect();
+        const mx = (x - (b.left + b.width / 2)) * 0.18,
+          my = (y - (b.top + b.height / 2)) * 0.18;
+        magnet.style.transform = `translate(${mx}px,${my}px)`;
       }
     };
-
-    const onMouseDown = () => setIsClicked(true);
-    const onMouseUp = () => setIsClicked(false);
-    const onMouseLeave = () => setIsVisible(false);
-    const onMouseEnter = () => setIsVisible(true);
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
-    document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('mouseenter', onMouseEnter);
-
+    const down = () => (targetScale *= 0.7);
+    const up = () => (targetScale /= 0.7);
+    const leave = () => {
+      shown = false;
+      d.style.opacity = r.style.opacity = '0';
+    };
+    const tick = () => {
+      rx += (x - rx) * 0.16;
+      ry += (y - ry) * 0.16;
+      scale += (targetScale - scale) * 0.15;
+      d.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+      r.style.transform = `translate3d(${rx}px,${ry}px,0) translate(-50%,-50%) scale(${scale})`;
+      raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('pointerdown', down);
+    window.addEventListener('pointerup', up);
+    document.documentElement.addEventListener('pointerleave', leave);
+    raf = requestAnimationFrame(tick);
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
-      document.removeEventListener('mouseleave', onMouseLeave);
-      document.removeEventListener('mouseenter', onMouseEnter);
+      cancelAnimationFrame(raf);
+      if (magnet) magnet.style.transform = '';
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointerup', up);
+      document.documentElement.removeEventListener('pointerleave', leave);
     };
   }, []);
 
-  // Smooth trail position loop
-  useEffect(() => {
-    if (!isVisible) return;
-    let animationFrameId: number;
-
-    const updateTrail = () => {
-      setTrailPosition((prev) => ({
-        x: prev.x + (position.x - prev.x) * 0.18,
-        y: prev.y + (position.y - prev.y) * 0.18,
-      }));
-      animationFrameId = requestAnimationFrame(updateTrail);
-    };
-
-    animationFrameId = requestAnimationFrame(updateTrail);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [position, isVisible]);
-
-  if (!isVisible) return null;
-
   return (
     <>
-      {/* Center Precision Glow Dot */}
       <div
-        className={`pointer-events-none fixed z-[9999] h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F26A2E] shadow-[0_0_12px_#F26A2E] transition-transform duration-100 ${
-          isHovered ? 'scale-150 bg-white' : ''
-        } ${isClicked ? 'scale-75' : ''}`}
-        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        ref={dot}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[9999] h-1.5 w-1.5 rounded-full bg-[#f5efe2] opacity-0 mix-blend-difference"
       />
-
-      {/* Outer Smooth Trailing Magnetic Ring */}
       <div
-        className={`pointer-events-none fixed z-[9998] rounded-full border border-[#F26A2E]/60 transition-all duration-300 -translate-x-1/2 -translate-y-1/2 ${
-          isHovered
-            ? 'h-12 w-12 bg-[#F26A2E]/15 border-[#F26A2E] backdrop-blur-[2px]'
-            : 'h-8 w-8 bg-transparent'
-        } ${isClicked ? 'h-6 w-6 border-white' : ''}`}
-        style={{ left: `${trailPosition.x}px`, top: `${trailPosition.y}px` }}
+        ref={ring}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[9998] h-8 w-8 rounded-full border border-[#f5efe2]/70 opacity-0 mix-blend-difference transition-opacity duration-300"
       />
     </>
   );
