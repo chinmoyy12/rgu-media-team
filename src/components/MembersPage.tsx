@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { SwarmCursor } from './SwarmCursor';
 import { motion, AnimatePresence } from 'motion/react';
 import { teamMembers } from '../data/mockData';
 import { TeamMember } from '../types';
@@ -24,6 +25,7 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
 
   // Sort team members strictly according to hierarchyOrder
   const sortedMembers = [...teamMembers].sort((a, b) => a.hierarchyOrder - b.hierarchyOrder);
@@ -70,7 +72,10 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
       </div>
 
       {/* Particle Animated Background */}
-      <ParticleBackground particleCount={80} interactive={true} />
+      <ParticleBackground particleCount={40} interactive={false} />
+
+      {/* Swarm cursor: rebuilds the title on open, then flocks around the pointer */}
+      <SwarmCursor targetRef={titleRef} />
 
       {/* Background Ambient Glows */}
       <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[160px] pointer-events-none" />
@@ -100,7 +105,7 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
             <UserCheck className="w-4 h-4" />
             <span>OFFICIAL STUDENT BODY ROSTER</span>
           </div>
-          <h1 className="font-cinzel text-3xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+          <h1 ref={titleRef} className="font-cinzel text-3xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
             LEADERSHIP & <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F26A2E] via-amber-400 to-orange-500">CREATIVE CREW</span>
           </h1>
           <p className="font-inter text-stone-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">

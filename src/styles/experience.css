@@ -394,6 +394,9 @@ button:hover > .nav-roll > span, button:hover > .nav-roll::after { transform: tr
 @media (max-width: 600px) { .adm-grid { grid-template-columns: 1fr; } .adm-head { padding: 18px; } .adm-body { padding: 18px; } .adm-foot { flex-wrap: wrap; } .adm-dirty { margin-left: 0; } }
 
 .fx-no-grain .fx-grain { display: none; }
+
+/* Members page swarm cursor */
+.swarm-canvas { position: fixed; inset: 0; z-index: 40; pointer-events: none; mix-blend-mode: screen; }
 .adm-color { display: flex; align-items: center; gap: 10px; }
 .adm-color input[type="color"] { width: 46px; height: 42px; padding: 3px; border-radius: 10px; cursor: pointer; flex-shrink: 0; }
 .adm-swatches { display: flex; gap: 6px; }
