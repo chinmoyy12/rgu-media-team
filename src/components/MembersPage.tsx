@@ -25,7 +25,7 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
-  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Sort team members strictly according to hierarchyOrder
   const sortedMembers = [...teamMembers].sort((a, b) => a.hierarchyOrder - b.hierarchyOrder);
@@ -74,14 +74,14 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
       {/* Particle Animated Background */}
       <ParticleBackground particleCount={40} interactive={false} />
 
-      {/* Swarm cursor: rebuilds the title on open, then flocks around the pointer */}
-      <SwarmCursor targetRef={titleRef} />
+      {/* First-launch intro: particles rebuild the whole page, swarm the cursor, then fade (6 s) */}
+      <SwarmCursor targetRef={contentRef} />
 
       {/* Background Ambient Glows */}
       <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[160px] pointer-events-none" />
       <div className="absolute top-96 right-10 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div ref={contentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Top Breadcrumb & Navigation Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-stone-800/80">
           <button
@@ -105,7 +105,7 @@ export const MembersPage: React.FC<MembersPageProps> = ({ onBackToHome, onApplyC
             <UserCheck className="w-4 h-4" />
             <span>OFFICIAL STUDENT BODY ROSTER</span>
           </div>
-          <h1 ref={titleRef} className="font-cinzel text-3xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+          <h1 className="font-cinzel text-3xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
             LEADERSHIP & <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F26A2E] via-amber-400 to-orange-500">CREATIVE CREW</span>
           </h1>
           <p className="font-inter text-stone-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">

@@ -1,29 +1,36 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * Particle swarm for the Members page.
+ * One-time "swarm rebuild" intro for the Members page.
  *
- *  1. Rebuild — on open, particles fly in from the screen edges and assemble
- *     the page title (the real heading fades in once they land).
- *  2. Swarm — the title then bursts and the particles flock around the cursor,
- *     stretching out behind it when it moves fast.
- *  3. Hovering the title (or clicking anywhere empty) rebuilds it again.
+ * Timeline (6 s, first visit per browser session only):
+ *   0.0 – 2.4 s  particles stream in from the edges and rebuild the whole
+ *                visible page: every word, plus the outlines of cards, chips,
+ *                buttons and photos. The real page stays hidden.
+ *   1.9 – 3.0 s  the real page fades in underneath while the particles hold.
+ *   3.0 – 4.8 s  the particles burst off the layout and swarm the cursor.
+ *   4.8 – 6.0 s  everything fades out and the canvas removes itself.
  *
- * Pure 2D canvas, pointer-events: none, paused while the tab is hidden, and
- * skipped entirely for reduced-motion users.
+ * Skipped for reduced-motion users. Click / key / scroll keeps working the whole
+ * time (the canvas never takes pointer events).
  */
 
 const COLORS = ['#f26a2e', '#ff8a4c', '#f5b14a', '#ffd9a8', '#f5efe2'];
+const SEEN_KEY = 'rgu-members-swarm-seen';
+const T_BUILD = 2.4,
+  T_REVEAL = 1.9,
+  T_BURST = 3.0,
+  T_FADE = 4.8,
+  T_END = 6.0;
 
 interface P {
   x: number;
   y: number;
   vx: number;
   vy: number;
-  /** target offset inside the title, relative to its top-left */
+  /** target in page coordinates (scroll-independent) */
   tx: number;
   ty: number;
-  /** swarm orbit */
   a: number;
   r: number;
   w: number;
@@ -32,278 +39,292 @@ interface P {
   delay: number;
 }
 
-type Mode = 'build' | 'hold' | 'swarm';
+const shouldPlay = () => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  try {
+    return !sessionStorage.getItem(SEEN_KEY);
+  } catch {
+    return true; // storage blocked — just play
+  }
+};
+const markSeen = () => {
+  try {
+    sessionStorage.setItem(SEEN_KEY, '1');
+  } catch {
+    /* ignore */
+  }
+};
 
 export const SwarmCursor: React.FC<{ targetRef: React.RefObject<HTMLElement | null> }> = ({ targetRef }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [active] = useState(shouldPlay);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (!active) return;
     const canvas = canvasRef.current;
-    const title = targetRef.current;
-    if (!canvas || !title) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const root = targetRef.current;
+    if (!canvas || !root) return;
+    markSeen();
 
     const ctx = canvas.getContext('2d')!;
-    const touch = window.matchMedia('(pointer: coarse)').matches;
-    const COUNT = touch || innerWidth < 700 ? 520 : 1100;
+    const small = window.matchMedia('(pointer: coarse)').matches || innerWidth < 700;
+    const COUNT = small ? 2200 : 4200;
     const dpr = Math.min(2, devicePixelRatio || 1);
-    let W = 0,
-      H = 0;
+    const W = innerWidth,
+      H = innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // hide the real heading until the particles have built it
-    title.style.transition = 'opacity .9s ease, filter .9s ease';
-    title.style.opacity = '0';
-    title.style.filter = 'blur(8px)';
-    const showTitle = (on: boolean) => {
-      title.style.opacity = on ? '1' : '0.12';
-      title.style.filter = on ? 'blur(0)' : 'blur(6px)';
+    // hide the real page content until the particles have rebuilt it
+    root.style.transition = 'none';
+    root.style.opacity = '0';
+    root.style.filter = 'blur(10px)';
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      root.style.transition = 'opacity 1.1s ease, filter 1.1s ease';
+      root.style.opacity = '1';
+      root.style.filter = 'blur(0)';
     };
 
     const parts: P[] = [];
     for (let i = 0; i < COUNT; i++) {
+      const side = (Math.random() * 4) | 0;
       parts.push({
-        x: 0,
-        y: 0,
+        x: side === 0 ? -30 : side === 1 ? W + 30 : Math.random() * W,
+        y: side === 2 ? -30 : side === 3 ? H + 30 : Math.random() * H,
         vx: 0,
         vy: 0,
         tx: 0,
         ty: 0,
         a: Math.random() * Math.PI * 2,
-        r: 14 + Math.pow(Math.random(), 1.7) * 120,
-        w: (0.6 + Math.random() * 1.6) * (Math.random() < 0.5 ? -1 : 1),
-        size: 0.7 + Math.random() * 1.5,
+        r: 16 + Math.pow(Math.random(), 1.6) * 170,
+        w: (0.5 + Math.random() * 1.5) * (Math.random() < 0.5 ? -1 : 1),
+        size: 0.7 + Math.random() * 1.4,
         c: COLORS[(Math.random() * COLORS.length) | 0],
-        delay: Math.random() * 0.55,
+        delay: Math.random() * 0.7,
       });
     }
 
-    /* ---- sample the title's glyphs into target points ---- */
-    const sampleTargets = () => {
-      const rect = title.getBoundingClientRect();
-      const tw = Math.max(1, Math.ceil(rect.width)),
-        th = Math.max(1, Math.ceil(rect.height));
+    /* ---------- trace the visible page into target points ---------- */
+    let step = 3;
+    const sample = () => {
       const off = document.createElement('canvas');
-      off.width = tw;
-      off.height = th;
+      off.width = W;
+      off.height = H;
       const o = off.getContext('2d', { willReadFrequently: true })!;
       o.fillStyle = '#fff';
+      o.strokeStyle = '#fff';
       o.textBaseline = 'middle';
+      const onScreen = (b: DOMRect) => b.width > 0 && b.bottom > 0 && b.top < H && b.right > 0 && b.left < W;
 
-      // draw each word where the browser actually laid it out
-      const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+      // 1) every word, drawn where the browser laid it out
       const range = document.createRange();
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       let node: Node | null;
       while ((node = walker.nextNode())) {
+        const el = node.parentElement;
         const text = node.textContent || '';
-        const cs = getComputedStyle(node.parentElement!);
+        if (!el || !text.trim()) continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === 'hidden' || cs.display === 'none') continue;
         const upper = cs.textTransform === 'uppercase';
-        o.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        o.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
         const re = /\S+/g;
         let m: RegExpExecArray | null;
         while ((m = re.exec(text))) {
           range.setStart(node, m.index);
           range.setEnd(node, m.index + m[0].length);
           const b = range.getBoundingClientRect();
-          if (!b.width) continue;
+          if (!onScreen(b)) continue;
           const word = upper ? m[0].toUpperCase() : m[0];
           const mw = o.measureText(word).width || 1;
           o.save();
-          o.translate(b.left - rect.left, b.top - rect.top + b.height / 2);
-          o.scale(b.width / mw, 1); // match the browser's letter-spacing
+          o.translate(b.left, b.top + b.height / 2);
+          o.scale(b.width / mw, 1);
           o.fillText(word, 0, 0);
           o.restore();
         }
       }
 
-      const data = o.getImageData(0, 0, tw, th).data;
-      // pick a grid step that yields roughly COUNT points
-      let filled = 0;
-      for (let i = 3; i < data.length; i += 16) if (data[i] > 128) filled++;
-      const step = Math.max(2, Math.round(Math.sqrt((filled * 4) / COUNT)));
-      const pts: Array<[number, number]> = [];
-      for (let y = 0; y < th; y += step)
-        for (let x = 0; x < tw; x += step) if (data[(y * tw + x) * 4 + 3] > 128) pts.push([x, y]);
-      if (!pts.length) return false;
+      // text first: it gets most of the particles so words stay readable
+      const textData = o.getImageData(0, 0, W, H).data;
+
+      // 2) outlines of the page's boxes: cards, chips, buttons, photos (drawn on a separate layer)
+      o.clearRect(0, 0, W, H);
+      o.lineWidth = 1.6;
+      const boxes = Array.from(
+        root.querySelectorAll(
+          'button, a, img, .glass-card, .glass-card-gradient, [class*="rounded-full"][class*="border"], [class*="rounded-2xl"][class*="border"], [class*="rounded-3xl"][class*="border"]'
+        )
+      ) as HTMLElement[];
+      boxes.forEach((el) => {
+        const b = el.getBoundingClientRect();
+        if (!onScreen(b) || b.width < 14 || b.height < 14 || b.width > W * 0.98) return;
+        const rad = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, b.width / 2, b.height / 2);
+        o.beginPath();
+        o.roundRect(b.left + 0.5, b.top + 0.5, b.width - 1, b.height - 1, rad);
+        o.stroke();
+      });
+
+      const boxData = o.getImageData(0, 0, W, H).data;
+
+      const count = (d: Uint8ClampedArray) => {
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 110) n++;
+        return n;
+      };
+      const grid = (d: Uint8ClampedArray, s: number) => {
+        const out: Array<[number, number]> = [];
+        for (let y = 0; y < H; y += s) for (let x = 0; x < W; x += s) if (d[(y * W + x) * 4 + 3] > 110) out.push([x, y]);
+        return out;
+      };
+      // 75% of particles for words, 25% for outlines
+      const textStep = Math.max(2, Math.round(Math.sqrt(count(textData) / (COUNT * 0.75))));
+      // outlines are thin, so walk every lit pixel and keep every k-th one
+      const boxK = Math.max(2, Math.ceil(count(boxData) / (COUNT * 0.25)));
+      const boxPts: Array<[number, number]> = [];
+      for (let i = 3, n = 0; i < boxData.length; i += 4)
+        if (boxData[i] > 110 && n++ % boxK === 0) boxPts.push([((i - 3) / 4) % W, Math.floor((i - 3) / 4 / W)]);
+      step = textStep;
+      const pts = [...grid(textData, textStep), ...boxPts];
+      if (!pts.length) pts.push([W / 2, H / 2]);
       for (let i = pts.length - 1; i > 0; i--) {
         const j = (Math.random() * (i + 1)) | 0;
         [pts[i], pts[j]] = [pts[j], pts[i]];
       }
+      const sy = scrollY;
       parts.forEach((p, i) => {
         const t = pts[i % pts.length];
-        p.tx = t[0] + (i >= pts.length ? (Math.random() - 0.5) * step : 0);
-        p.ty = t[1] + (i >= pts.length ? (Math.random() - 0.5) * step : 0);
-      });
-      return true;
-    };
-
-    const resize = () => {
-      W = innerWidth;
-      H = innerHeight;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      sampleTargets();
-    };
-
-    // start everyone off-screen, scattered around the edges
-    const scatter = () => {
-      parts.forEach((p) => {
-        const side = (Math.random() * 4) | 0;
-        p.x = side === 0 ? -40 : side === 1 ? W + 40 : Math.random() * W;
-        p.y = side === 2 ? -40 : side === 3 ? H + 40 : Math.random() * H;
-        p.vx = p.vy = 0;
+        const extra = i >= pts.length;
+        p.tx = t[0] + (extra ? (Math.random() - 0.5) * step : 0);
+        p.ty = t[1] + (extra ? (Math.random() - 0.5) * step : 0) + sy;
       });
     };
 
-    let mode: Mode = 'build';
-    let modeT = 0;
+    /* ---------- run ---------- */
     let mx = W / 2,
-      my = H * 0.4,
+      my = H / 2,
       pmx = mx,
       pmy = my,
       speed = 0,
       hasPointer = false,
-      overTitle = false,
+      burst = false,
       raf = 0,
-      last = performance.now(),
-      titleShown = false;
-
-    const setMode = (m: Mode) => {
-      mode = m;
-      modeT = 0;
-      if (m === 'swarm') {
-        // burst outward from the letters
-        parts.forEach((p) => {
-          const ang = Math.random() * Math.PI * 2,
-            f = 2 + Math.random() * 7;
-          p.vx += Math.cos(ang) * f;
-          p.vy += Math.sin(ang) * f - 1.5;
-        });
-        showTitle(true);
-      }
-      if (m === 'build') {
-        titleShown = false;
-        showTitle(false);
-      }
-    };
+      t0 = 0,
+      last = 0;
 
     const onMove = (e: PointerEvent) => {
       mx = e.clientX;
       my = e.clientY;
       hasPointer = true;
-      const r = title.getBoundingClientRect();
-      const inside = mx > r.left - 20 && mx < r.right + 20 && my > r.top - 20 && my < r.bottom + 20;
-      if (inside && !overTitle && mode === 'swarm') setMode('build');
-      overTitle = inside;
     };
-    const onDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement)?.closest?.('a,button,input,select,textarea,[role="button"]')) return;
-      if (mode === 'swarm') setMode('build');
+
+    const finish = () => {
+      cancelAnimationFrame(raf);
+      reveal();
+      setDone(true);
     };
 
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
+      if (!t0) t0 = last = now;
+      const t = (now - t0) / 1000;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      modeT += dt;
+      if (t >= T_END) return finish();
+      raf = requestAnimationFrame(frame);
 
-      const rect = title.getBoundingClientRect();
-      const ox = rect.left,
-        oy = rect.top;
+      if (t > T_REVEAL) reveal();
+      const swarm = t > T_BURST;
+      if (swarm && !burst) {
+        burst = true;
+        parts.forEach((p) => {
+          const ang = Math.random() * Math.PI * 2,
+            f = 2 + Math.random() * 8;
+          p.vx += Math.cos(ang) * f;
+          p.vy += Math.sin(ang) * f - 1;
+        });
+      }
 
-      // cursor velocity (for the comet tail)
       const cvx = mx - pmx,
         cvy = my - pmy;
       pmx = mx;
       pmy = my;
       speed += (Math.min(60, Math.hypot(cvx, cvy)) - speed) * 0.15;
+      const tail = Math.min(1, speed / 30);
+      const ax = hasPointer ? mx : W / 2 + Math.cos(t * 1.3) * W * 0.18,
+        ay = hasPointer ? my : H * 0.5 + Math.sin(t * 1.7) * H * 0.12;
+      // global fade at the end
+      const fade = t < T_FADE ? 1 : Math.max(0, 1 - (t - T_FADE) / (T_END - T_FADE));
 
-      // timeline: build → short hold → swarm (unless the cursor sits on the title)
-      if (mode === 'build' && modeT > 1.5 && !titleShown) {
-        titleShown = true;
-        showTitle(true);
-      }
-      if (mode === 'build' && modeT > 2.1) setMode('hold');
-      if (mode === 'hold' && modeT > 0.7 && !overTitle) setMode('swarm');
-
-      // swarm anchor: the cursor, or a slow drift when there's no pointer (touch)
-      const ax = hasPointer ? mx : W / 2 + Math.cos(now / 2100) * W * 0.25,
-        ay = hasPointer ? my : H * 0.45 + Math.sin(now / 1700) * H * 0.15;
-
-      // fade trails
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = mode === 'swarm' ? 'rgba(0,0,0,0.32)' : 'rgba(0,0,0,0.5)';
+      ctx.fillStyle = swarm ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'lighter';
 
-      const tail = Math.min(1, speed / 30);
+      // particles thin out over the build→hold so the real page reads through
+      const holdDim = t < T_REVEAL ? 1 : t < T_BURST ? 1 - ((t - T_REVEAL) / (T_BURST - T_REVEAL)) * 0.45 : 0.75;
+
       for (let i = 0; i < parts.length; i++) {
         const p = parts[i];
         let gx: number, gy: number, k: number, damp: number;
-        if (mode === 'swarm') {
+        if (swarm) {
           p.a += p.w * dt * (1.4 + tail * 2);
-          // orbit, squashed and dragged behind fast movement
-          const rr = p.r * (1 + tail * 0.6);
+          const rr = p.r * (1 + tail * 0.5);
           gx = ax + Math.cos(p.a) * rr - cvx * tail * (p.r / 18);
           gy = ay + Math.sin(p.a) * rr * 0.8 - cvy * tail * (p.r / 18);
-          k = 0.018 + (1 - p.r / 140) * 0.03;
+          k = 0.014 + (1 - p.r / 190) * 0.03;
           damp = 0.88;
         } else {
-          const ready = mode === 'hold' || modeT > p.delay;
-          gx = ready ? ox + p.tx : p.x;
-          gy = ready ? oy + p.ty : p.y;
-          k = mode === 'hold' ? 0.12 : 0.045;
-          damp = 0.8;
+          const go = t > p.delay;
+          gx = go ? p.tx : p.x;
+          gy = go ? p.ty - scrollY : p.y; // targets are in page coords, so they follow scrolling
+          // ease the pull in so arrivals look like a rebuild, not a snap
+          k = 0.02 + Math.min(1, Math.max(0, (t - p.delay) / 1.2)) * 0.09;
+          damp = 0.78;
         }
-        p.vx = (p.vx + (gx - p.x) * k) * damp;
-        p.vy = (p.vy + (gy - p.y) * k) * damp;
-        // a little life
-        p.vx += (Math.random() - 0.5) * (mode === 'swarm' ? 0.6 : 0.08);
-        p.vy += (Math.random() - 0.5) * (mode === 'swarm' ? 0.6 : 0.08);
+        p.vx = (p.vx + (gx - p.x) * k) * damp + (Math.random() - 0.5) * (swarm ? 0.55 : 0.05);
+        p.vy = (p.vy + (gy - p.y) * k) * damp + (Math.random() - 0.5) * (swarm ? 0.55 : 0.05);
         p.x += p.vx;
         p.y += p.vy;
-
-        if (p.x < -60 || p.x > W + 60 || p.y < -60 || p.y > H + 60) continue;
+        if (p.x < -40 || p.x > W + 40 || p.y < -40 || p.y > H + 40) continue;
         const v = Math.min(1, Math.hypot(p.vx, p.vy) / 12);
+        ctx.globalAlpha = (swarm ? 0.5 + v * 0.5 : 0.9) * holdDim * fade;
         ctx.fillStyle = p.c;
-        ctx.globalAlpha = mode === 'swarm' ? 0.55 + v * 0.45 : 0.85;
-        const s = p.size * (1 + v * 0.8);
+        // while rebuilding, each dot covers its grid cell so the words read as solid shapes
+        const s = swarm ? p.size * (1 + v * 0.8) : Math.max(p.size, step * 0.75) * (1 + v * 0.5);
         ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
       }
       ctx.globalAlpha = 1;
     };
 
-    const onVis = () => {
-      cancelAnimationFrame(raf);
-      if (!document.hidden) {
-        last = performance.now();
-        raf = requestAnimationFrame(frame);
-      }
-    };
-
-    resize();
-    scatter();
-    // re-sample once the web fonts are in (the title width changes)
-    document.fonts?.ready.then(() => sampleTargets());
-    window.addEventListener('resize', resize);
+    // let the page lay out (and its cards mount) before tracing it
+    const start = window.setTimeout(() => {
+      sample();
+      raf = requestAnimationFrame(frame);
+    }, 120);
     window.addEventListener('pointermove', onMove, { passive: true });
-    window.addEventListener('pointerdown', onDown);
+    const onVis = () => {
+      if (document.hidden) finish(); // don't leave the page hidden in a background tab
+    };
     document.addEventListener('visibilitychange', onVis);
-    raf = requestAnimationFrame(frame);
 
     return () => {
+      clearTimeout(start);
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerdown', onDown);
       document.removeEventListener('visibilitychange', onVis);
-      title.style.opacity = '';
-      title.style.filter = '';
-      title.style.transition = '';
+      root.style.opacity = '';
+      root.style.filter = '';
+      root.style.transition = '';
     };
-  }, [targetRef]);
+  }, [active, targetRef]);
 
+  if (!active || done) return null;
   return <canvas ref={canvasRef} aria-hidden="true" className="swarm-canvas" />;
 };
