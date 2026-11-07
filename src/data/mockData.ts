@@ -373,7 +373,7 @@ export const galleryItems: GalleryItem[] = [
     id: 'gal-4',
     title: 'Inter-University Football Championship Finals',
     category: 'Sports',
-    imageUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
     photographer: 'Joonti Das',
     date: 'January 18, 2025',
     location: 'Royal Sports Complex',

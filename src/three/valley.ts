@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { perfTier, frameGuard, type Tier } from '../lib/device';
 
 /**
  * Night Flower Valley — an original three.js scene.
@@ -372,9 +373,12 @@ export class FlowerValley {
   private tmpTint = new THREE.Color();
 
   constructor(private container: HTMLElement, private opts: ValleyOptions = {}) {
-    this.mobile = window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
-    this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.pixel = Math.min(window.devicePixelRatio, this.mobile ? 1.5 : 1.75);
+    this.tier = perfTier();
+    this.mobile = this.tier !== 'high' || window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
+    this.q = this.tier === 'low' ? 0.45 : 1;
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: this.tier === 'low' ? 'default' : 'high-performance' });
+    this.pixel = Math.min(window.devicePixelRatio, this.tier === 'low' ? 0.85 : this.mobile ? 1.35 : 1.75);
+    this.guard = frameGuard(() => this.degrade());
     this.renderer.setPixelRatio(this.pixel);
     this.renderer.setClearColor(0x020306, 1);
     this.renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block';
@@ -397,6 +401,7 @@ export class FlowerValley {
     this.final = new ShaderPass(finalShader);
     this.composer.addPass(this.final);
     this.composer.addPass(new OutputPass());
+    if (this.tier === 'low') this.bloom.enabled = false;
 
     this.resize();
     window.addEventListener('resize', this.resize);
@@ -445,7 +450,7 @@ export class FlowerValley {
     this.scene.add(sky);
 
     // stars
-    const N = this.mobile ? 900 : 1800;
+    const N = Math.round((this.mobile ? 900 : 1800) * this.q);
     const pos = new Float32Array(N * 3);
     const r = new Float32Array(N);
     for (let i = 0; i < N; i++) {
@@ -525,8 +530,8 @@ export class FlowerValley {
   }
 
   private buildFlowers() {
-    const NF = this.mobile ? 9000 : 20000;
-    const NL = this.mobile ? 5000 : 11000;
+    const NF = Math.round((this.mobile ? 9000 : 20000) * this.q);
+    const NL = Math.round((this.mobile ? 5000 : 11000) * this.q);
     const N = NF + NL;
     const pos = new Float32Array(N * 3);
     const col = new Float32Array(N * 3);
@@ -599,7 +604,7 @@ export class FlowerValley {
   }
 
   private buildDust() {
-    const N = this.mobile ? 500 : 1400;
+    const N = Math.round((this.mobile ? 500 : 1400) * this.q);
     const box = 50;
     const pos = new Float32Array(N * 3);
     const r = new Float32Array(N);
@@ -789,8 +794,24 @@ export class FlowerValley {
     cancelAnimationFrame(this.raf);
   }
 
+  private tier: Tier = 'high';
+  /** particle-count multiplier (lower on weak devices) */
+  private q = 1;
+  private guard: (now: number) => void = () => {};
+  private degraded = 0;
+  /** Frame guard tripped: lower resolution, then drop bloom. */
+  private degrade() {
+    this.degraded++;
+    this.pixel = Math.max(0.7, this.pixel * 0.75);
+    this.renderer.setPixelRatio(this.pixel);
+    if (this.degraded >= 2) this.bloom.enabled = false;
+    this.resize();
+    if (this.degraded < 3) this.guard = frameGuard(() => this.degrade());
+  }
+
   private elapsed = 0;
   private renderFrame(dt: number) {
+    this.guard(performance.now());
     this.elapsed += dt;
     const t = this.elapsed;
 

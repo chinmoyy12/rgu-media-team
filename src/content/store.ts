@@ -100,6 +100,7 @@ export interface SiteContent {
     contactPhone: string;
     officeLocation: string;
     whatsappAssistGroup: string;
+    familyPhotoUrl: string;
   };
   socialLinks: { instagram: string; facebook: string; youtube: string; linkedin: string; whatsapp: string };
   text: SiteText;
@@ -129,6 +130,7 @@ function snapshot(): SiteContent {
       contactPhone: r.contactPhone,
       officeLocation: r.officeLocation,
       whatsappAssistGroup: r.whatsappAssistGroup ?? '',
+      familyPhotoUrl: config.familyPhotoUrl,
     },
     socialLinks: { ...config.socialLinks },
     text: clone(siteText),
@@ -170,6 +172,7 @@ function apply(c: Partial<SiteContent>) {
   r.contactPhone = g.contactPhone;
   r.officeLocation = g.officeLocation;
   r.whatsappAssistGroup = g.whatsappAssistGroup;
+  config.familyPhotoUrl = g.familyPhotoUrl ?? base.general.familyPhotoUrl;
   Object.assign(config.socialLinks, base.socialLinks, c.socialLinks || {});
   Object.assign(siteText, base.text, c.text || {});
   Object.assign(siteSettings.appearance, base.appearance, c.appearance || {});

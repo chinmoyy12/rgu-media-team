@@ -34,7 +34,8 @@ export const Footer: React.FC<FooterProps> = ({ onApplyClick }) => {
         </svg>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* xl:pr-24 leaves room for the fixed section-dots panel on the right */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:pr-24 2xl:pr-8 relative z-10 pb-[env(safe-area-inset-bottom)]">
         <div className="pb-12 border-b border-stone-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           {/* Branding */}
           <div className="space-y-3 max-w-xl">

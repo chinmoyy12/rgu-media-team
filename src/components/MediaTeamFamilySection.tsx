@@ -1,11 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, Heart, Sparkles, Maximize2, ExternalLink, X } from 'lucide-react';
 import { ImageWithSkeleton } from './Skeleton';
+import { config } from '../config';
+import { teamMembers } from '../data/mockData';
+
+/** Loads `src` and reports whether it is a real photo (image hosts often serve a tiny logo for removed files). */
+function usePhotoOk(src: string) {
+  const [ok, setOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!src) return setOk(false);
+    setOk(null);
+    let alive = true;
+    const img = new Image();
+    img.referrerPolicy = 'no-referrer';
+    img.onload = () => alive && setOk(!(img.naturalWidth <= 200 && img.naturalHeight <= 200));
+    img.onerror = () => alive && setOk(false);
+    img.src = src;
+    return () => {
+      alive = false;
+    };
+  }, [src]);
+  return ok;
+}
 
 export const MediaTeamFamilySection: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const imageUrl = "https://i.ibb.co/4Z4J91Dd/Whats-App-Image-2026-07-28-at-11-05-29-PM.jpg";
-  const pageUrl = "https://ibb.co/HDGX1hMd";
+  const imageUrl = config.familyPhotoUrl;
+  const pageUrl = imageUrl;
+  const photoOk = usePhotoOk(imageUrl);
+  const crew = teamMembers.filter((m) => m.photoUrl).slice(0, 12);
 
   return (
     <section id="media-family" className="py-24 relative bg-[#050505] overflow-hidden">
@@ -32,17 +55,34 @@ export const MediaTeamFamilySection: React.FC = () => {
           <div className="glass-card-gradient rounded-3xl p-4 sm:p-6 md:p-8 border border-[#F26A2E]/40 shadow-[0_0_50px_rgba(242,106,46,0.15)] relative overflow-hidden group">
             {/* Image Container with Zoom hover */}
             <div
-              onClick={() => setIsModalOpen(true)}
-              className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-stone-950 border border-stone-800 cursor-pointer mb-4"
+              onClick={() => photoOk && setIsModalOpen(true)}
+              className={`relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-stone-950 border border-stone-800 mb-4 ${photoOk ? 'cursor-pointer' : ''}`}
             >
-              <ImageWithSkeleton
-                src={imageUrl}
-                alt="Media Team Family - The Assam Royal Global University"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                loading="eager"
-                decoding="async"
-                referrerPolicy="no-referrer"
-              />
+              {photoOk === false ? (
+                // group photo unavailable → a collage of the crew's own portraits
+                <div className="absolute inset-0 grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2 p-2 sm:p-3 content-center">
+                  {crew.map((m) => (
+                    <img
+                      key={m.id}
+                      src={m.photoUrl}
+                      alt={m.name}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="w-full aspect-square object-cover rounded-xl border border-stone-800/80 group-hover:scale-[1.03] transition-transform duration-500"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <ImageWithSkeleton
+                  src={imageUrl}
+                  alt="Media Team Family - The Assam Royal Global University"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              )}
 
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-stone-950/20 opacity-80 group-hover:opacity-40 transition-opacity" />
@@ -54,7 +94,7 @@ export const MediaTeamFamilySection: React.FC = () => {
               </div>
 
               {/* Expand Hint */}
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-[#F26A2E] text-white shadow-lg opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 sm:scale-75 group-hover:scale-100">
+              <div className={`${photoOk ? '' : 'hidden'} absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-[#F26A2E] text-white shadow-lg opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 sm:scale-75 group-hover:scale-100`}>
                 <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
@@ -71,7 +111,7 @@ export const MediaTeamFamilySection: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-800/60">
+              <div className={`${photoOk ? 'flex' : 'hidden'} items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-800/60`}>
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700 text-xs font-semibold transition-all cursor-pointer shrink-0"

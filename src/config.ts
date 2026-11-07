@@ -51,6 +51,9 @@ export const config = {
     whatsappAssistGroup: "https://chat.whatsapp.com/L301ratApTM5DxJ9F7M5EE",
   },
 
+  // group photo in the "Media Team Family" section (editable in Admin → General)
+  familyPhotoUrl: "https://i.ibb.co/4Z4J91Dd/Whats-App-Image-2026-07-28-at-11-05-29-PM.jpg",
+
   socialLinks: {
     instagram: "https://www.instagram.com/royalglobaluniversity/",
     facebook: "https://facebook.com/royalglobaluniversity",

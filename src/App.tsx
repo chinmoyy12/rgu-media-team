@@ -47,11 +47,25 @@ export default function App() {
   useEffect(() => (look.smoothScroll ? startSmoothScroll() : undefined), [look.smoothScroll]);
   useEffect(() => startFx(), []);
   useEffect(() => {
-    // Ctrl/⌘ + Shift + A opens the admin panel
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+      const k = e.key.toLowerCase();
+      // Ctrl/⌘ + Shift + A opens the admin panel
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && k === 'a') {
         e.preventDefault();
         setIsAdminOpen(true);
+        return;
+      }
+      // Ctrl/⌘ + K opens site search
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === 'k') {
+        e.preventDefault();
+        setIsSearchModalOpen((o) => !o);
+        return;
+      }
+      // Esc closes the apply / showreel / search windows
+      if (e.key === 'Escape') {
+        setIsFormModalOpen(false);
+        setIsShowreelModalOpen(false);
+        setIsSearchModalOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);

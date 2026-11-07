@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { perfTier, frameGuard, type Tier } from '../lib/device';
 
 /**
  * Opening intro: a cinema camera assembles itself, its reels spin and unspool a
@@ -110,6 +111,24 @@ export class CinemaIntro {
   private cards: Card[] = [];
   private dust!: THREE.Points;
 
+  private tier: Tier = 'high';
+  private dpr = 1;
+  private guard: (now: number) => void = () => {};
+  private degraded = 0;
+
+  /** Lighter rendering after the frame guard detects a slow device. */
+  private degrade() {
+    this.degraded++;
+    if (this.composer) {
+      this.composer.dispose();
+      this.composer = null;
+    }
+    this.dpr = Math.max(0.75, this.dpr * 0.7);
+    this.renderer.setPixelRatio(this.dpr);
+    this.dust.visible = false;
+    if (this.degraded < 2) this.guard = frameGuard(() => this.degrade());
+  }
+
   private exiting = false;
   private exitT0 = 0;
   private exitDur = 1.4;
@@ -123,8 +142,14 @@ export class CinemaIntro {
   ) {
     const w = container.clientWidth || innerWidth,
       h = container.clientHeight || innerHeight;
-    this.renderer = new THREE.WebGLRenderer({ antialias: !small, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(small ? 1.5 : 2, devicePixelRatio || 1));
+    this.tier = perfTier();
+    if (this.tier !== 'high') this.small = true;
+    const low = this.tier === 'low';
+    this.renderer = new THREE.WebGLRenderer({ antialias: this.tier === 'high', powerPreference: low ? 'default' : 'high-performance' });
+    this.dpr = Math.min(this.tier === 'high' ? 1.75 : this.tier === 'mid' ? 1.4 : 1, devicePixelRatio || 1);
+    this.renderer.setPixelRatio(this.dpr);
+    // drop quality on the fly if this device can't hold ~30 fps
+    this.guard = frameGuard(() => this.degrade());
     this.renderer.setSize(w, h);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -136,9 +161,14 @@ export class CinemaIntro {
 
     this.scene.background = new THREE.Color(0x050505);
     this.scene.fog = new THREE.Fog(0x050505, 14, 34);
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
+    if (!low) {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+    } else {
+      // no environment map on weak GPUs — a brighter ambient keeps metals readable
+      this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    }
 
     this.cam = new THREE.PerspectiveCamera(w < h ? 52 : 38, w / h, 0.05, 80);
     this.cam.position.set(0, 2.6, 16);
@@ -150,7 +180,7 @@ export class CinemaIntro {
     this.buildCards(photos);
     this.buildDust();
 
-    if (!small) {
+    if (!this.small) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.cam));
       // gentle bloom: only truly bright things (lens, REC lamp, clap flash) glow
@@ -497,7 +527,7 @@ export class CinemaIntro {
       'catmullrom',
       0.4
     );
-    const SEG = 420;
+    const SEG = this.tier === 'low' ? 180 : this.small ? 300 : 420;
     const width = 0.62;
     const pos = new Float32Array((SEG + 1) * 2 * 3);
     const uv = new Float32Array((SEG + 1) * 2 * 2);
@@ -544,7 +574,7 @@ export class CinemaIntro {
   }
 
   private buildCards(photos: string[]) {
-    const N = this.small ? 6 : 9;
+    const N = this.tier === 'low' ? 4 : this.small ? 6 : 9;
     const geo = new THREE.PlaneGeometry(1.1, 1.32);
     for (let i = 0; i < N; i++) {
       const tex = canvasTex(220, 264, (c) => {
@@ -578,7 +608,7 @@ export class CinemaIntro {
   }
 
   private buildDust() {
-    const n = this.small ? 400 : 900;
+    const n = this.tier === 'low' ? 150 : this.small ? 400 : 900;
     const p = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) p.set([(Math.random() - 0.5) * 30, (Math.random() - 0.5) * 16, (Math.random() - 0.5) * 30], i * 3);
     const g = new THREE.BufferGeometry();
@@ -635,6 +665,7 @@ export class CinemaIntro {
       this.renderer.domElement.style.opacity = '1';
       this.onStart?.();
     }
+    this.guard(now);
     const t = (now - this.t0) / 1000;
     const dt = Math.min(0.05, (now - this.lastNow) / 1000);
     this.lastNow = now;

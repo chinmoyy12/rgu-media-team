@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { perfTier } from '../lib/device';
 
 interface ParticleBackgroundProps {
   className?: string;
@@ -6,231 +7,232 @@ interface ParticleBackgroundProps {
   interactive?: boolean;
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  radius: number;
+  vx: number;
+  vy: number;
+  baseAlpha: number;
+  phase: number;
+  color: string;
+  shape: 'dot' | 'cross' | 'frame';
+  size: number;
+  rotation: number;
+  vRot: number;
+}
+
+const COLORS = ['#F26A2E', '#FFA048', '#FFC107', '#FF6D00', '#FFFFFF'];
+const SHAPES: Particle['shape'][] = ['dot', 'dot', 'cross', 'frame'];
+
+/**
+ * Drifting media-motif particles behind a section.
+ * The canvas is only ever viewport-sized (it sticks while its section scrolls),
+ * pauses when off-screen or in a background tab, and runs at the same speed on
+ * any refresh rate. Weak devices get fewer particles and no connecting lines.
+ */
 export const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
   className = 'absolute inset-0 pointer-events-none z-0',
   particleCount = 65,
   interactive = true,
 }) => {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let animationFrameId: number;
+    const tier = perfTier();
+    const count = Math.round(particleCount * (tier === 'low' ? 0.45 : tier === 'mid' ? 0.75 : 1));
+    const links = tier !== 'low';
+    const dpr = Math.min(tier === 'high' ? 1.5 : 1, devicePixelRatio || 1);
+    const pointer = interactive && window.matchMedia('(pointer: fine)').matches;
+
     let width = 0;
     let height = 0;
-
-    const mouse = {
-      x: -1000,
-      y: -1000,
-      radius: 130,
+    const resize = () => {
+      width = canvas.clientWidth || wrap.clientWidth;
+      height = canvas.clientHeight || Math.min(wrap.clientHeight, innerHeight);
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
+    resize();
 
-    const updateDimensions = () => {
-      const parent = canvas.parentElement;
-      width = canvas.width = parent ? parent.clientWidth : window.innerWidth;
-      height = canvas.height = parent ? parent.clientHeight : window.innerHeight;
+    const particles: Particle[] = Array.from({ length: count }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      radius: Math.random() * 2.2 + 0.8,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35 - 0.12,
+      baseAlpha: Math.random() * 0.45 + 0.18,
+      phase: Math.random() * Math.PI * 2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+      size: Math.random() * 10 + 6,
+      rotation: Math.random() * Math.PI,
+      vRot: (Math.random() - 0.5) * 0.01,
+    }));
+
+    const mouse = { x: -1000, y: -1000, radius: 130 };
+    const onMove = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
     };
-
-    updateDimensions();
-
-    interface Particle {
-      x: number;
-      y: number;
-      radius: number;
-      vx: number;
-      vy: number;
-      baseAlpha: number;
-      alpha: number;
-      pulseSpeed: number;
-      color: string;
-      glowRadius: number;
-      shape: 'dot' | 'cross' | 'frame';
-      size: number;
-      rotation: number;
-      vRot: number;
+    const onLeave = () => {
+      mouse.x = mouse.y = -1000;
+    };
+    if (pointer) {
+      window.addEventListener('pointermove', onMove, { passive: true });
+      document.addEventListener('pointerleave', onLeave);
     }
 
-    const particles: Particle[] = [];
-    const colors = ['#F26A2E', '#FFA048', '#FFC107', '#FF6D00', '#FFFFFF'];
-    const shapes: ('dot' | 'cross' | 'frame')[] = ['dot', 'dot', 'cross', 'frame'];
-
-    for (let i = 0; i < particleCount; i++) {
-      const baseAlpha = Math.random() * 0.45 + 0.18;
-      particles.push({
-        x: Math.random() * (width || window.innerWidth),
-        y: Math.random() * (height || window.innerHeight),
-        radius: Math.random() * 2.2 + 0.8,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35 - 0.12,
-        baseAlpha,
-        alpha: baseAlpha,
-        pulseSpeed: Math.random() * 0.02 + 0.005,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        glowRadius: Math.random() * 8 + 4,
-        shape: shapes[Math.floor(Math.random() * shapes.length)],
-        size: Math.random() * 10 + 6,
-        rotation: Math.random() * Math.PI * 2,
-        vRot: (Math.random() - 0.5) * 0.008,
-      });
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
-    };
-
-    const handleMouseLeave = () => {
-      mouse.x = -1000;
-      mouse.y = -1000;
-    };
-
-    if (interactive) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseleave', handleMouseLeave);
-    }
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateDimensions();
-    });
-
-    if (canvas.parentElement) {
-      resizeObserver.observe(canvas.parentElement);
-    }
-
+    let raf = 0;
+    let last = 0;
     let time = 0;
+    let onScreen = false;
 
-    const render = () => {
-      time += 0.015;
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      const f = last ? Math.min(3, (now - last) / 16.67) : 1; // 1 at 60 fps
+      last = now;
+      time += 0.015 * f;
       ctx.clearRect(0, 0, width, height);
 
-      // Render subtle background creative media grid lines
-      const gridSize = 90;
-      ctx.strokeStyle = '#F26A2E';
-      ctx.lineWidth = 0.5;
-      ctx.globalAlpha = 0.035;
-
-      for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-
-      // Render connected lines between nearby particles
-      const maxDistance = 110;
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < maxDistance) {
-            const lineAlpha = (1 - dist / maxDistance) * 0.12;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = '#F26A2E';
-            ctx.globalAlpha = lineAlpha;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+      if (links) {
+        const max = 110;
+        ctx.strokeStyle = '#F26A2E';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < particles.length; i++) {
+          const a = particles[i];
+          for (let j = i + 1; j < particles.length; j++) {
+            const b = particles[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < max * max) {
+              ctx.globalAlpha = (1 - Math.sqrt(d2) / max) * 0.12;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
           }
         }
       }
 
-      // Render particles & camera motifs
-      particles.forEach((p) => {
-        p.alpha = p.baseAlpha + Math.sin(time * 4 + p.x) * 0.12;
-        p.alpha = Math.max(0.05, Math.min(0.85, p.alpha));
-
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rotation += p.vRot;
-
-        if (interactive && mouse.x > 0 && mouse.y > 0) {
+      for (const p of particles) {
+        const alpha = Math.max(0.05, Math.min(0.85, p.baseAlpha + Math.sin(time * 4 + p.phase) * 0.12));
+        p.x += p.vx * f;
+        p.y += p.vy * f;
+        p.rotation += p.vRot * f;
+        if (pointer && mouse.x > 0) {
           const dx = p.x - mouse.x;
           const dy = p.y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouse.radius) {
-            const force = (mouse.radius - dist) / mouse.radius;
-            const angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * force * 1.5;
-            p.y += Math.sin(angle) * force * 1.5;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < mouse.radius && d > 0.01) {
+            const force = ((mouse.radius - d) / mouse.radius) * 1.5 * f;
+            p.x += (dx / d) * force;
+            p.y += (dy / d) * force;
           }
         }
-
         if (p.x < -15) p.x = width + 15;
-        if (p.x > width + 15) p.x = -15;
+        else if (p.x > width + 15) p.x = -15;
         if (p.y < -15) p.y = height + 15;
-        if (p.y > height + 15) p.y = -15;
+        else if (p.y > height + 15) p.y = -15;
 
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
-        ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
         ctx.strokeStyle = p.color;
-
-        if (p.shape === 'cross') {
-          const s = p.size * 0.4;
-          ctx.lineWidth = 0.7;
+        if (p.shape === 'dot') {
+          ctx.globalAlpha = alpha * 0.2;
           ctx.beginPath();
-          ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
-          ctx.moveTo(0, -s); ctx.lineTo(0, s);
-          ctx.stroke();
-        } else if (p.shape === 'frame') {
-          const s = p.size * 0.8;
-          ctx.lineWidth = 0.6;
-          ctx.strokeRect(-s / 2, -s / 2, s, s);
+          ctx.arc(p.x, p.y, p.radius * 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
         } else {
-          // Soft glow
-          ctx.beginPath();
-          ctx.arc(0, 0, p.radius * 2, 0, Math.PI * 2);
-          ctx.globalAlpha = p.alpha * 0.2;
-          ctx.fill();
-
-          // Core dot
-          ctx.beginPath();
-          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
-          ctx.globalAlpha = p.alpha;
-          ctx.fill();
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.globalAlpha = alpha;
+          if (p.shape === 'cross') {
+            const s = p.size * 0.4;
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(-s, 0);
+            ctx.lineTo(s, 0);
+            ctx.moveTo(0, -s);
+            ctx.lineTo(0, s);
+            ctx.stroke();
+          } else {
+            const s = p.size * 0.8;
+            ctx.lineWidth = 0.6;
+            ctx.strokeRect(-s / 2, -s / 2, s, s);
+          }
+          ctx.restore();
         }
-
-        ctx.restore();
-      });
-
-      animationFrameId = requestAnimationFrame(render);
+      }
+      ctx.globalAlpha = 1;
     };
 
-    render();
+    const play = () => {
+      if (raf || !onScreen || document.hidden) return;
+      last = 0;
+      raf = requestAnimationFrame(frame);
+    };
+    const pause = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const io = new IntersectionObserver(([e]) => {
+      onScreen = e.isIntersecting;
+      if (onScreen) play();
+      else pause();
+    });
+    io.observe(wrap);
+    const onVis = () => (document.hidden ? pause() : play());
+    document.addEventListener('visibilitychange', onVis);
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      if (interactive) {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseleave', handleMouseLeave);
+      pause();
+      io.disconnect();
+      ro.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+      if (pointer) {
+        window.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerleave', onLeave);
       }
-      resizeObserver.disconnect();
     };
   }, [particleCount, interactive]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{ opacity: 0.85 }}
-    />
+    <div ref={wrapRef} className={className} aria-hidden="true" style={{ overflow: 'clip' }}>
+      {/* faint media grid as a static background instead of redrawing it every frame */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'sticky',
+          top: 0,
+          display: 'block',
+          width: '100%',
+          height: 'min(100%, 100vh)',
+          maxHeight: '100vh',
+          opacity: 0.85,
+          backgroundImage:
+            'linear-gradient(to right, rgba(242,106,46,.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(242,106,46,.035) 1px, transparent 1px)',
+          backgroundSize: '90px 90px',
+        }}
+      />
+    </div>
   );
 };
-

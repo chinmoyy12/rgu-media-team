@@ -76,20 +76,34 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
       if (!document.getElementById('home')) valleyReady = true;
     }, 300);
     let raf = 0;
-    const tick = () => {
+    let last = performance.now();
+    // time-based (not per-frame) so a slow device or throttled tab can't stall the intro
+    const update = () => {
       const now = performance.now();
+      const dt = Math.min(0.5, (now - last) / 1000);
+      last = now;
       const el = now - t0.current;
       // if the scene never starts (slow device / WebGL failure) give up waiting after 3 s
       const from = sceneStart.current ?? (el > 3000 ? t0.current + 3000 : null);
       const sceneEl = from === null ? 0 : now - from;
       const minOk = !use3D || sceneEl > MIN_INTRO_MS;
-      const cap = (valleyReady || el > 4500) && minOk ? 100 : use3D ? Math.min(96, (sceneEl / MIN_INTRO_MS) * 96) : 88;
-      setProgress((p) => Math.min(cap, p + Math.max(0.5, (cap - p) * 0.06)));
+      // hard safety: the intro never lasts more than 9 s, whatever happens
+      const cap =
+        el > 9000 || ((valleyReady || el > 4500) && minOk) ? 100 : use3D ? Math.min(96, (sceneEl / MIN_INTRO_MS) * 96) : 88;
+      setProgress((p) => {
+        const step = Math.max(18 * dt, (cap - p) * (1 - Math.exp(-dt * 7)));
+        return Math.min(cap, p + step);
+      });
+    };
+    const tick = () => {
+      update();
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
+    const iv = window.setInterval(update, 250); // keeps going even when frames are throttled
     return () => {
       cancelAnimationFrame(raf);
+      clearInterval(iv);
       clearTimeout(noHero);
       window.removeEventListener('valley:loaded', onValley);
     };
@@ -150,7 +164,9 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
                 </span>
               ))}
             </p>
-            <p className="loader-sub intro-sub">The Assam Royal Global University · Lights, camera, action</p>
+            <p className="loader-sub intro-sub">
+              The Assam Royal Global University<span className="intro-sub-extra"> · Lights, camera, action</span>
+            </p>
           </div>
           <span className="loader-count intro-count">{String(Math.floor(progress)).padStart(3, '0')}</span>
         </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { perfTier } from '../lib/device';
 
 /**
  * One-time "swarm rebuild" intro for the Members page.
@@ -69,8 +70,9 @@ export const SwarmCursor: React.FC<{ targetRef: React.RefObject<HTMLElement | nu
 
     const ctx = canvas.getContext('2d')!;
     const small = window.matchMedia('(pointer: coarse)').matches || innerWidth < 700;
-    const COUNT = small ? 2200 : 4200;
-    const dpr = Math.min(2, devicePixelRatio || 1);
+    const tier = perfTier();
+    const COUNT = tier === 'low' ? 1100 : small ? 2200 : 4200;
+    const dpr = Math.min(tier === 'low' ? 1 : 2, devicePixelRatio || 1);
     const W = innerWidth,
       H = innerHeight;
     canvas.width = W * dpr;

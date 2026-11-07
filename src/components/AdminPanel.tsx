@@ -307,6 +307,13 @@ const GENERAL: Field[] = [
   { key: 'general.officeLocation', label: 'Office location' },
   { key: 'general.universityLocation', label: 'University address', wide: true },
   { key: 'general.whatsappAssistGroup', label: 'WhatsApp help group link', type: 'url', wide: true },
+  {
+    key: 'general.familyPhotoUrl',
+    label: 'Team group photo ("Media Team Family" section)',
+    type: 'image',
+    wide: true,
+    hint: 'Upload a photo or paste a direct image link. If it is missing, member photos are shown instead.',
+  },
 ];
 const LINKS: Field[] = [
   { key: 'socialLinks.instagram', label: 'Instagram', type: 'url', wide: true },

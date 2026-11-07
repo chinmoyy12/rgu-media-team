@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { perfTier } from '../lib/device';
 
 /**
  * Scroll-driven video ribbon: a strip of live media cards slides along a fixed
@@ -125,7 +126,7 @@ export class VideoRibbon {
   private vp = new THREE.Vector3();
 
   constructor(private els: RibbonEls, items: RibbonItem[], private onCardClick?: (i: number) => void) {
-    this.renderer = new THREE.WebGLRenderer({ canvas: els.canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas: els.canvas, antialias: perfTier() === 'high', alpha: true });
     this.renderer.setClearColor(0, 0);
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
@@ -140,8 +141,12 @@ export class VideoRibbon {
 
     this.io = new IntersectionObserver(
       ([e]) => {
+        const was = this.visible;
         this.visible = e.isIntersecting;
-        if (this.visible) this.loop();
+        if (this.visible && !was) {
+          cancelAnimationFrame(this.raf); // never run two loops at once
+          this.loop();
+        }
         else {
           cancelAnimationFrame(this.raf);
           this.cards.forEach((c) => c.v && !c.v.paused && c.v.pause());
@@ -265,7 +270,10 @@ export class VideoRibbon {
     this.H = r.height || innerHeight;
     this.asp = this.W / this.H;
     this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio || 1, window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches ? 1.5 : 1.75),
+      Math.min(
+        devicePixelRatio || 1,
+        perfTier() === 'low' ? 1 : window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches ? 1.5 : 1.75
+      ),
     );
     this.renderer.setSize(this.W, this.H, false);
     this.camera.aspect = this.asp;

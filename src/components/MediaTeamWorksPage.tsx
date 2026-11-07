@@ -29,7 +29,7 @@ export const MediaTeamWorksPage: React.FC<MediaTeamWorksPageProps> = ({
       </div>
 
       {/* Glow Effects */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[180px] pointer-events-none z-0" />
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[min(800px,100%)] h-[500px] bg-[#F26A2E]/10 rounded-full blur-[180px] pointer-events-none z-0" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Top Header Navigation */}

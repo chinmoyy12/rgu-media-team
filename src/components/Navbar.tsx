@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UniversityLogo } from './UniversityLogo';
 import { getLenis } from '../lib/smoothScroll';
-import { Lock } from 'lucide-react';
+import { Lock, Search } from 'lucide-react';
 
 interface NavbarProps {
   onApplyClick: () => void;
@@ -22,7 +22,7 @@ const Roll: React.FC<{ children: string }> = ({ children }) => (
   </span>
 );
 
-export const Navbar: React.FC<NavbarProps> = ({ onApplyClick, onMembersClick, onWorksClick, onHomeClick, currentPage = 'home', onAdminClick, isDraft }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onApplyClick, onSearchOpen, onMembersClick, onWorksClick, onHomeClick, currentPage = 'home', onAdminClick, isDraft }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [open, setOpen] = useState(false);
@@ -76,6 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onApplyClick, onMembersClick, on
     { idx: '03', label: 'Works', active: currentPage === 'works', onClick: () => go(onWorksClick) },
     { idx: '04', label: 'About', onClick: () => go(toSection('about')) },
     { idx: '05', label: 'Contact', onClick: () => go(toSection('contact')) },
+    ...(onSearchOpen ? [{ idx: '06', label: 'Search', onClick: () => go(onSearchOpen) }] : []),
   ];
 
   return (
@@ -107,6 +108,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onApplyClick, onMembersClick, on
         </nav>
 
         <div className="nav-actions">
+          {onSearchOpen && (
+            <button className="nav-admin nav-search" onClick={() => go(onSearchOpen)} aria-label="Search the site" title="Search (Ctrl/⌘ + K)">
+              <Search size={15} />
+            </button>
+          )}
           {onAdminClick && (
             <button
               className={`nav-admin ${isDraft ? 'is-draft' : ''}`}
