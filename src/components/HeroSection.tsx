@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { FlowerValley, AmbientAudio } from '../three/valley';
 import { siteText } from '../content/store';
+import { afterIntro, isIntroDone } from '../lib/introGate';
 
 interface HeroSectionProps {
   onApplyClick: () => void;
@@ -43,6 +44,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onApplyClick, onMember
       valley = new FlowerValley(host, {
         onLoaded: () => {
           setLoaded(true);
+          // first frame is ready — stay paused behind the intro so it gets the GPU to itself
+          if (!isIntroDone()) valley.setActive(false);
           window.dispatchEvent(new Event('valley:loaded'));
         },
         onIntroDone: () => setUiOn(true),
@@ -57,8 +60,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onApplyClick, onMember
     }
     valleyRef.current = valley;    audioRef.current = new AmbientAudio();
 
-    // Fallback: never keep the UI hidden for long
-    const failsafe = window.setTimeout(() => setUiOn(true), 4500);
+    // Fallback: never keep the UI hidden for long after the intro
+    let failsafe = 0;
 
     let raf = 0;
     const update = () => {
@@ -100,17 +103,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onApplyClick, onMember
       praf = requestAnimationFrame(ptick);
     };
     window.addEventListener('pointermove', onMove, { passive: true });
-    praf = requestAnimationFrame(ptick);
 
     // live depth readout
-    const depthTimer = window.setInterval(() => {
-      if (depthRef.current) depthRef.current.textContent = valley.depth.toFixed(1).padStart(5, '0');
-    }, 90);
-
-    const io = new IntersectionObserver(([e]) => valley.setActive(e.isIntersecting), { threshold: 0 });
+    let depthTimer = 0;
+    let inView = true;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting;
+        if (isIntroDone()) valley.setActive(inView);
+      },
+      { threshold: 0 }
+    );
     io.observe(track);
 
+    // everything interactive starts when the intro opens onto the site,
+    // and the valley's descent plays right then so visitors actually see it
+    const stopWaiting = afterIntro(() => {
+      valley.restartIntro();
+      valley.setActive(inView);
+      praf = requestAnimationFrame(ptick);
+      depthTimer = window.setInterval(() => {
+        if (depthRef.current) depthRef.current.textContent = valley.depth.toFixed(1).padStart(5, '0');
+      }, 90);
+      failsafe = window.setTimeout(() => setUiOn(true), 4500);
+    });
+
     return () => {
+      stopWaiting();
       clearTimeout(failsafe);
       clearInterval(depthTimer);
       cancelAnimationFrame(raf);

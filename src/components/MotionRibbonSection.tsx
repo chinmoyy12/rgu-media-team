@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { VideoRibbon, RibbonItem } from '../three/ribbon';
 import { galleryItems } from '../data/mockData';
 import { siteText } from '../content/store';
+import { afterIntroIdle } from '../lib/introGate';
 
 interface MotionRibbonSectionProps {
   onWorksClick?: () => void;
@@ -31,6 +32,10 @@ export const MotionRibbonSection: React.FC<MotionRibbonSectionProps> = ({ onWork
     if (!el) return;
     const q = <T extends HTMLElement>(s: string) => el.querySelector(s) as T;
     let ribbon: VideoRibbon | null = null;
+    let disposed = false;
+    // built after the opening intro, in an idle moment, so it never stalls the intro
+    const cancel = afterIntroIdle(() => {
+    if (disposed) return;
     try {
       ribbon = new VideoRibbon(
         {
@@ -51,7 +56,12 @@ export const MotionRibbonSection: React.FC<MotionRibbonSectionProps> = ({ onWork
     } catch {
       /* WebGL unavailable: headline still renders */
     }
-    return () => ribbon?.dispose();
+    }, 600);
+    return () => {
+      disposed = true;
+      cancel();
+      ribbon?.dispose();
+    };
   }, [itemsKey]);
 
   return (

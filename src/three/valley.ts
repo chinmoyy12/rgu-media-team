@@ -767,6 +767,11 @@ export class FlowerValley {
     this.flightTarget = 1;
     this.disperseTarget = 0;
   }
+  /** Replay the descent into the valley (used when the opening intro reveals the hero). */
+  restartIntro() {
+    this.intro = 0;
+    this.introDone = false;
+  }
   setActive(on: boolean) {
     if (on) this.start();
     else this.stop();
