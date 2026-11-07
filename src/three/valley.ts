@@ -372,7 +372,7 @@ export class FlowerValley {
   private tmpTint = new THREE.Color();
 
   constructor(private container: HTMLElement, private opts: ValleyOptions = {}) {
-    this.mobile = window.matchMedia('(max-width: 820px), (pointer: coarse)').matches;
+    this.mobile = window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches;
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     this.pixel = Math.min(window.devicePixelRatio, this.mobile ? 1.5 : 1.75);
     this.renderer.setPixelRatio(this.pixel);

@@ -56,7 +56,7 @@ export const ScrollIndicator: React.FC = () => {
   return (
     <nav
       aria-label="Section Navigation"
-      className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col items-end gap-2.5 p-2 rounded-full glass-card border border-stone-800/80 bg-stone-950/40 backdrop-blur-md shadow-2xl pointer-events-auto select-none"
+      className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col items-end gap-2.5 p-2 rounded-full glass-card border border-stone-800/80 bg-stone-950/40 backdrop-blur-md shadow-2xl pointer-events-auto select-none"
     >
       {sections.map((section) => {
         const isActive = activeSection === section.id;

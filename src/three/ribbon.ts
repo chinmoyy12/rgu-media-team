@@ -264,7 +264,9 @@ export class VideoRibbon {
     this.W = r.width || innerWidth;
     this.H = r.height || innerHeight;
     this.asp = this.W / this.H;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(
+      Math.min(devicePixelRatio || 1, window.matchMedia('(max-width: 1024px), (pointer: coarse)').matches ? 1.5 : 1.75),
+    );
     this.renderer.setSize(this.W, this.H, false);
     this.camera.aspect = this.asp;
     this.camera.fov = this.asp < 16 / 9 ? (Math.atan(0.561 / this.asp) * 360) / Math.PI : FOV;

@@ -5,7 +5,10 @@ let lenis: Lenis | null = null;
 /** Starts Lenis inertial scrolling; returns a cleanup function. */
 export function startSmoothScroll() {
   if (lenis || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
-  lenis = new Lenis({ duration: 1.25, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true });
+  // touch devices already have native momentum scrolling — leave them alone
+  if (window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches) return () => {};
+  // lerp-based easing feels natural on both mouse wheels (Windows) and trackpads (Mac)
+  lenis = new Lenis({ lerp: 0.1, smoothWheel: true, wheelMultiplier: 1, touchMultiplier: 1.5 });
   let raf = 0;
   const tick = (time: number) => {
     lenis?.raf(time);
