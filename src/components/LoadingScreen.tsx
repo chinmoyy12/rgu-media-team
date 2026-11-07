@@ -42,6 +42,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const introRef = useRef<import('../three/intro').CinemaIntro | null>(null);
   const t0 = useRef(performance.now());
+  /** when the 3D scene drew its first frame — the intro's clock starts here */
+  const sceneStart = useRef<number | null>(null);
 
   // start the 3D scene (code-split so the site's main bundle isn't held up)
   useEffect(() => {
@@ -51,7 +53,9 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
     import('../three/intro')
       .then(({ CinemaIntro }) => {
         if (cancelled || !stageRef.current) return;
-        introRef.current = new CinemaIntro(stageRef.current, introPhotos(), small);
+        const intro = new CinemaIntro(stageRef.current, introPhotos(), small);
+        intro.onStart = () => (sceneStart.current = performance.now());
+        introRef.current = intro;
       })
       .catch(() => {
         /* scene failed — the overlay still counts down and exits */
@@ -73,9 +77,13 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
     }, 300);
     let raf = 0;
     const tick = () => {
-      const el = performance.now() - t0.current;
-      const minOk = !use3D || el > MIN_INTRO_MS;
-      const cap = (valleyReady || el > 4500) && minOk ? 100 : use3D ? Math.min(96, (el / MIN_INTRO_MS) * 96) : 88;
+      const now = performance.now();
+      const el = now - t0.current;
+      // if the scene never starts (slow device / WebGL failure) give up waiting after 3 s
+      const from = sceneStart.current ?? (el > 3000 ? t0.current + 3000 : null);
+      const sceneEl = from === null ? 0 : now - from;
+      const minOk = !use3D || sceneEl > MIN_INTRO_MS;
+      const cap = (valleyReady || el > 4500) && minOk ? 100 : use3D ? Math.min(96, (sceneEl / MIN_INTRO_MS) * 96) : 88;
       setProgress((p) => Math.min(cap, p + Math.max(0.5, (cap - p) * 0.06)));
       raf = requestAnimationFrame(tick);
     };
@@ -101,8 +109,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
     if (use3D) {
       // dive into the lens, open the iris part-way through the push
       introRef.current?.exit();
-      timers.push(window.setTimeout(() => setLeaving(true), 650));
-      timers.push(window.setTimeout(finish, 650 + 1000));
+      timers.push(window.setTimeout(() => setLeaving(true), 900));
+      timers.push(window.setTimeout(finish, 900 + 1000));
     } else {
       timers.push(window.setTimeout(() => setLeaving(true), 250));
       timers.push(window.setTimeout(finish, 1350));

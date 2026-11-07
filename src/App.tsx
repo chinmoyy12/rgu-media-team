@@ -115,7 +115,8 @@ export default function App() {
       {/* Main Content View Switcher with AnimatePresence */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${currentPage}-${contentVersion}`}
+          key={currentPage}
+          data-content-version={contentVersion}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}

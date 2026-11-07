@@ -146,7 +146,7 @@ export const ContactSection: React.FC = () => {
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                     <span>RECRUITMENT OPEN •</span>
                   </div>
-                  <span className="text-xs text-stone-400 font-mono">Academic Session 2026-27</span>
+                  <span className="text-xs text-stone-400 font-mono">Academic Session {config.recruitment.academicYear}</span>
                 </div>
 
                 <h3 className="font-cinzel text-2xl sm:text-3xl font-black text-white mb-3">

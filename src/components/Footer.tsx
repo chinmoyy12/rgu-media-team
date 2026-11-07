@@ -1,7 +1,15 @@
 import React from 'react';
 import { UniversityLogo } from './UniversityLogo';
 import { config } from '../config';
-import { Sparkles, Heart, ArrowUp } from 'lucide-react';
+import { Sparkles, Heart, ArrowUp, Instagram, Facebook, Youtube, Linkedin, MessageCircle } from 'lucide-react';
+
+const SOCIALS = [
+  ['instagram', 'Instagram', Instagram],
+  ['facebook', 'Facebook', Facebook],
+  ['youtube', 'YouTube', Youtube],
+  ['linkedin', 'LinkedIn', Linkedin],
+  ['whatsapp', 'WhatsApp', MessageCircle],
+] as const;
 
 interface FooterProps {
   onApplyClick: () => void;
@@ -37,6 +45,23 @@ export const Footer: React.FC<FooterProps> = ({ onApplyClick }) => {
             <p className="font-inter text-xs text-stone-400 leading-relaxed">
               The official Media Team of The Assam Royal Global University, Guwahati. Capturing moments, creating stories, preserving memories, and building the university's digital identity.
             </p>
+
+            {/* social links — edited in Admin → Links */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {SOCIALS.filter(([k]) => config.socialLinks[k]?.trim()).map(([k, label, Icon]) => (
+                <a
+                  key={k}
+                  href={config.socialLinks[k]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                  className="w-10 h-10 rounded-full border border-stone-800 bg-stone-900/60 flex items-center justify-center text-stone-300 hover:text-white hover:border-[#F26A2E] hover:bg-[#F26A2E]/15 transition-colors"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Call To Action */}

@@ -127,3 +127,16 @@ create policy "admins can delete site media"
 insert into public.site_admins (email) values
   ('studiorgu1@rgs.edu.in')
 on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Live sync: broadcast changes to site_content so open pages update instantly
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'site_content'
+  ) then
+    alter publication supabase_realtime add table public.site_content;
+  end if;
+end $$;

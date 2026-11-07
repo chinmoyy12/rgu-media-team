@@ -11,11 +11,15 @@ import {
   exportJSON,
   getContent,
   getHistoryVersion,
+  getPublishedAt,
   isDraft,
   listHistory,
+  previewContent,
   publishLive,
   refreshPublished,
+  revertPreview,
   saveDraft,
+  subscribe,
   validateImport,
 } from '../content/store';
 import { canUpload, uploadImage } from '../content/media';
@@ -597,11 +601,16 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
     []
   );
 
+  // the live version this editing session started from (for "someone else published" checks)
+  const baseAt = useRef<string | null>(null);
+  const flashTimer = useRef(0);
+
   useEffect(() => {
     if (!open) return;
     const c = getContent();
     setDraft(c);
     setSaved(c);
+    baseAt.current = getPublishedAt();
     if (recovering) return;
     if (authMode() === 'none') return; // keep dev-preview state as is
     let alive = true;
@@ -621,8 +630,48 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
   }, [open]);
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(saved), [draft, saved]);
+
+  // live preview: the page behind the panel follows your edits as you type
+  const previewed = useRef(false);
+  useEffect(() => {
+    if (!open || !authed) return;
+    if (!dirty) {
+      if (previewed.current) {
+        previewed.current = false;
+        revertPreview();
+      }
+      return;
+    }
+    const id = window.setTimeout(() => {
+      previewed.current = true;
+      previewContent(draft);
+    }, 220);
+    return () => clearTimeout(id);
+  }, [draft, dirty, open, authed]);
+
+  // someone else published while the editor is open with nothing unsaved → load it
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  useEffect(() => {
+    if (!open) return;
+    return subscribe(() => {
+      if (dirtyRef.current || isDraft() || previewed.current) return;
+      const at = getPublishedAt();
+      if (at && at !== baseAt.current) {
+        const c = getContent();
+        setDraft(c);
+        setSaved(c);
+        baseAt.current = at;
+      }
+    });
+  }, [open]);
+
   const close = () => {
     if (authed && dirty && !confirm('You have unsaved changes. Close without saving?')) return;
+    if (previewed.current) {
+      previewed.current = false;
+      revertPreview();
+    }
     onClose();
   };
   const closeRef = useRef(close);
@@ -643,9 +692,11 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
   }, [open]);
   const note = (m: string) => {
     setFlash(m);
-    window.setTimeout(() => setFlash(''), 2600);
+    clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(''), 3200);
   };
   const save = () => {
+    previewed.current = false;
     saveDraft(draft);
     setSaved(draft);
     note(live ? 'Draft saved — only you can see it. Publish to go live.' : 'Saved — previewing in this browser');
@@ -653,8 +704,14 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
   const publish = async (force = false) => {
     if (!force && !confirm('Publish these changes to the live site for every visitor?')) return;
     setPublishing(true);
-    const r = await publishLive(draft, { force });
-    setPublishing(false);
+    let r: Awaited<ReturnType<typeof publishLive>>;
+    try {
+      r = await publishLive(draft, { force, base: baseAt.current });
+    } catch (er: any) {
+      r = { ok: false, error: /fetch|network/i.test(String(er?.message)) ? 'You seem to be offline — check your connection and try again.' : er?.message || 'Publish failed' };
+    } finally {
+      setPublishing(false);
+    }
     if (r.conflict) {
       const by = r.conflict.by ? ` by ${r.conflict.by}` : '';
       if (
@@ -664,10 +721,12 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
       )
         return publish(true);
       await refreshPublished();
+      previewed.current = false;
       discardDraft();
       const c = getContent();
       setDraft(c);
       setSaved(c);
+      baseAt.current = getPublishedAt();
       note('Loaded the newer live version');
       return;
     }
@@ -675,6 +734,8 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
       note(r.error || 'Publish failed');
       return;
     }
+    previewed.current = false;
+    baseAt.current = getPublishedAt();
     const c = getContent();
     setDraft(c);
     setSaved(c);
@@ -909,6 +970,7 @@ export const AdminPanel: React.FC<{ open: boolean; onClose: () => void; onOpenRe
                           className="adm-btn"
                           onClick={() => {
                             if (!confirm('Discard this browser’s draft and go back to the published content?')) return;
+                            previewed.current = false;
                             discardDraft();
                             const c = getContent();
                             setDraft(c);

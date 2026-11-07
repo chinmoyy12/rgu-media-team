@@ -86,7 +86,11 @@ export class CinemaIntro {
   private composer: EffectComposer | null = null;
   private raf = 0;
   private t0 = performance.now();
+  private lastNow = 0;
+  private started = false;
   private disposed = false;
+  /** called once the first frame is on screen */
+  onStart: (() => void) | null = null;
   private mx = 0;
   private my = 0;
   private smx = 0;
@@ -108,7 +112,7 @@ export class CinemaIntro {
 
   private exiting = false;
   private exitT0 = 0;
-  private exitDur = 1.15;
+  private exitDur = 1.4;
   private exitFrom = new THREE.Vector3();
   private exitResolve: (() => void) | null = null;
 
@@ -125,6 +129,9 @@ export class CinemaIntro {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // fade the canvas in on its first frame instead of popping
+    this.renderer.domElement.style.opacity = '0';
+    this.renderer.domElement.style.transition = 'opacity .6s ease';
     container.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color(0x050505);
@@ -146,7 +153,8 @@ export class CinemaIntro {
     if (!small) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.cam));
-      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.55, 0.6, 0.72));
+      // gentle bloom: only truly bright things (lens, REC lamp, clap flash) glow
+      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.42, 0.5, 0.88));
       this.composer.addPass(new OutputPass());
     }
 
@@ -529,7 +537,7 @@ export class CinemaIntro {
         metalness: 0.1,
         emissive: 0xffffff,
         emissiveMap: this.filmTex,
-        emissiveIntensity: 0.28,
+        emissiveIntensity: 0.14,
       })
     );
     this.scene.add(this.film);
@@ -559,12 +567,12 @@ export class CinemaIntro {
           c.fillText(['CAMPUS', 'EVENTS', 'FESTS', 'SPORTS', 'STAGE', 'PODCAST', 'REELS', 'CREW', 'MOMENTS'][i % 9], 16, 240);
           tex.needsUpdate = true;
         });
-      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.18 });
+      const mat = new THREE.MeshStandardMaterial({ transparent: true, color: 0xc9c4bc, map: tex, roughness: 0.55, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.05 });
       const mesh = new THREE.Mesh(geo, mat);
       const a = (i / N) * Math.PI * 2;
       const from = new THREE.Vector3((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 16, -28 - Math.random() * 10);
       mesh.position.copy(from);
-      this.cards.push({ mesh, a, r: 4.4 + (i % 3) * 0.55, y: ((i % 4) - 1.5) * 0.85, delay: 1.1 + i * 0.12, from, spin: (Math.random() - 0.5) * 0.6 });
+      this.cards.push({ mesh, a, r: 4.8 + (i % 3) * 0.6, y: ((i % 4) - 1.5) * 0.85, delay: 1.1 + i * 0.12, from, spin: (Math.random() - 0.5) * 0.6 });
       this.scene.add(mesh);
     }
   }
@@ -618,9 +626,21 @@ export class CinemaIntro {
   private loop = (now: number) => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
+    // timeline starts on the first rendered frame (not at construction), so slow
+    // shader compiles don't eat the opening; dt keeps speed equal on 60/120/144 Hz
+    if (!this.started) {
+      this.started = true;
+      this.t0 = now;
+      this.lastNow = now;
+      this.renderer.domElement.style.opacity = '1';
+      this.onStart?.();
+    }
     const t = (now - this.t0) / 1000;
-    this.smx += (this.mx - this.smx) * 0.05;
-    this.smy += (this.my - this.smy) * 0.05;
+    const dt = Math.min(0.05, (now - this.lastNow) / 1000);
+    this.lastNow = now;
+    const f = dt * 60; // 1 at 60 fps
+    this.smx += (this.mx - this.smx) * 0.05 * f;
+    this.smy += (this.my - this.smy) * 0.05 * f;
 
     // assemble the camera
     for (const p of this.parts) {
@@ -635,7 +655,7 @@ export class CinemaIntro {
       p.obj.visible = t > p.delay - 0.05;
     }
     const reelSpeed = 1.2 + clamp01((t - 1.2) / 1.5) * 4;
-    this.reels.forEach((r, i) => (r.rotation.z -= reelSpeed * 0.016 * (i ? 1.25 : 1)));
+    this.reels.forEach((r, i) => (r.rotation.z -= reelSpeed * dt * (i ? 1.25 : 1)));
     (this.recLamp.material as THREE.MeshBasicMaterial).color.setHex(Math.sin(t * 6) > 0 ? 0xff2a2a : 0x3a0505);
     this.rig.position.y = Math.sin(t * 1.1) * 0.06;
     this.rig.rotation.y = -0.35 + Math.sin(t * 0.4) * 0.08;
@@ -659,7 +679,11 @@ export class CinemaIntro {
     this.cards.forEach((c, i) => {
       const k = easeOutCubic(clamp01((t - c.delay) / 1.3));
       const a = c.a + t * 0.22;
-      const home = new THREE.Vector3(Math.cos(a) * c.r, c.y + Math.sin(t * 0.9 + i) * 0.18, Math.sin(a) * c.r * 0.85);
+      // flattened orbit so cards circle the camera instead of filling the lens
+      const home = new THREE.Vector3(Math.cos(a) * c.r, c.y + Math.sin(t * 0.9 + i) * 0.18, Math.sin(a) * c.r * 0.55 - 0.8);
+      // fade out cards that swing close to the viewer
+      const near = c.mesh.position.distanceTo(camTarget);
+      (c.mesh.material as THREE.MeshStandardMaterial).opacity = clamp01((near - 3) / 2.5);
       if (this.exiting) {
         const ek = easeInOutCubic(clamp01((now - this.exitT0) / 1000 / this.exitDur));
         home.multiplyScalar(1 + ek * 3.5);
@@ -688,12 +712,15 @@ export class CinemaIntro {
       this.rig.updateMatrixWorld();
       // aim at a point just in front of the glass, then push through it
       const front = new THREE.Vector3(2.25, -0.05, 0).applyMatrix4(this.rig.matrixWorld);
-      const out = new THREE.Vector3(5, -0.05, 0).applyMatrix4(this.rig.matrixWorld);
+      const out = new THREE.Vector3(6.5, -0.05, 0).applyMatrix4(this.rig.matrixWorld);
       this.lensFront.copy(front);
+      // curve round onto the lens axis first, then push straight into the glass
       const target = front.clone().lerp(out, 0.02);
-      this.cam.position.lerpVectors(this.exitFrom, target, e);
+      const a = this.exitFrom.clone().lerp(out, e);
+      const b = out.clone().lerp(target, e);
+      this.cam.position.copy(a.lerp(b, e));
       this.cam.lookAt(new THREE.Vector3(0.5, -0.05, 0).applyMatrix4(this.rig.matrixWorld));
-      this.cam.fov = THREE.MathUtils.lerp(this.cam.fov, 75, 0.08);
+      this.cam.fov = THREE.MathUtils.lerp(this.cam.fov, 75, Math.min(1, 0.08 * f));
       this.cam.updateProjectionMatrix();
       this.lensGlass.emissiveIntensity = 0.35 + e * e * 6;
       if (e >= 1 && this.exitResolve) {

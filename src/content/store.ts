@@ -225,7 +225,71 @@ export async function loadContent() {
   const draft = readDraft();
   hasDraft = !!draft;
   apply(draft || published || {});
+  startLiveSync();
 }
+
+/* ---------- live sync: every open page picks up a publish within seconds ---------- */
+
+let syncStarted = false;
+let lastSyncCheck = 0;
+
+/** Apply a newly published row unless this browser is previewing its own draft. */
+function receivePublished(content: SiteContent, updatedAt: string) {
+  if (publishedAt && updatedAt && Date.parse(updatedAt) <= Date.parse(publishedAt)) return; // already have it
+  published = content;
+  publishedAt = updatedAt;
+  if (!hasDraft) apply(published);
+  else {
+    // keep the admin's draft on screen, but tell the panel the live copy moved on
+    listeners.forEach((f) => f());
+  }
+}
+
+async function checkForUpdate() {
+  if (!supabase || document.visibilityState === 'hidden') return;
+  const now = Date.now();
+  if (now - lastSyncCheck < 4000) return; // throttle bursts of focus events
+  lastSyncCheck = now;
+  try {
+    const { data, error } = await supabase.from('site_content').select('content, updated_at').eq('id', 1).maybeSingle();
+    if (!error && data?.content) receivePublished(data.content as SiteContent, data.updated_at);
+  } catch {
+    /* offline — try again later */
+  }
+}
+
+function startLiveSync() {
+  if (syncStarted || !supabase) return;
+  syncStarted = true;
+  // 1. instant push over a websocket (needs site_content in the supabase_realtime publication)
+  try {
+    supabase
+      .channel('site-content-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_content', filter: 'id=eq.1' }, (p) => {
+        const row = p.new as { content?: SiteContent; updated_at?: string } | undefined;
+        if (row?.content) receivePublished(row.content, row.updated_at || new Date().toISOString());
+        else void checkForUpdate();
+      })
+      .subscribe();
+  } catch {
+    /* realtime unavailable — the checks below still keep pages fresh */
+  }
+  // 2. re-check when the visitor comes back to the tab, and every 30 s as a fallback
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && void checkForUpdate());
+  window.addEventListener('focus', () => void checkForUpdate());
+  window.addEventListener('online', () => void checkForUpdate());
+  window.setInterval(() => void checkForUpdate(), 30000);
+  // 3. keep several admin tabs in this browser in step with each other's drafts
+  window.addEventListener('storage', (e) => {
+    if (e.key !== DRAFT_KEY) return;
+    const d = readDraft();
+    hasDraft = !!d;
+    apply(d || published || {});
+  });
+}
+
+/** True when someone published after this browser last loaded the live copy. */
+export const getPublishedAt = () => publishedAt;
 
 export const getContent = (): SiteContent => snapshot();
 export const getPublished = (): SiteContent => clone(published ? { ...DEFAULTS, ...published } : DEFAULTS);
@@ -246,6 +310,16 @@ export function saveDraft(c: SiteContent) {
     /* storage blocked — still apply for this session */
   }
   apply(out);
+}
+
+/** Show unsaved editor content on the page right away (this browser only, nothing stored). */
+export function previewContent(c: SiteContent) {
+  apply(c);
+}
+
+/** Undo a preview: back to this browser's saved draft, or the live content. */
+export function revertPreview() {
+  apply(readDraft() || published || {});
 }
 
 /** Throw away the local draft and go back to the published content. */
@@ -271,11 +345,14 @@ export interface PublishResult {
 }
 
 /** Push content to the database so every visitor gets it on their next page load. */
-export async function publishLive(c: SiteContent, opts: { force?: boolean } = {}): Promise<PublishResult> {
+export async function publishLive(c: SiteContent, opts: { force?: boolean; base?: string | null } = {}): Promise<PublishResult> {
   if (!supabase) return { ok: false, error: 'Supabase is not configured.' };
+  // `base` = the live version the editor started from (live sync may have moved publishedAt since)
+  const base = opts.base !== undefined ? opts.base : publishedAt;
   if (!opts.force) {
     const { data } = await supabase.from('site_content').select('updated_at, updated_by').eq('id', 1).maybeSingle();
-    if (data && publishedAt && data.updated_at !== publishedAt) return { ok: false, conflict: { at: data.updated_at, by: data.updated_by ?? undefined } };
+    if (data && base && Date.parse(data.updated_at) !== Date.parse(base))
+      return { ok: false, conflict: { at: data.updated_at, by: data.updated_by ?? undefined } };
   }
   const out = { ...clone(c), version: 1 as const, updatedAt: new Date().toISOString() };
   const { data, error } = await supabase

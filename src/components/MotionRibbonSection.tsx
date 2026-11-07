@@ -19,6 +19,12 @@ const buildItems = (): RibbonItem[] => [
 
 export const MotionRibbonSection: React.FC<MotionRibbonSectionProps> = ({ onWorksClick, onApplyClick }) => {
   const root = useRef<HTMLDivElement | null>(null);
+  // keep the latest click handler without rebuilding the WebGL scene
+  const worksRef = useRef(onWorksClick);
+  worksRef.current = onWorksClick;
+  const items = buildItems();
+  // only rebuild the 3D ribbon when the gallery images themselves change
+  const itemsKey = items.map((i) => i.src + '|' + i.title).join('\n');
 
   useEffect(() => {
     const el = root.current;
@@ -40,13 +46,13 @@ export const MotionRibbonSection: React.FC<MotionRibbonSectionProps> = ({ onWork
           counter: q('.vr-counter'),
         },
         buildItems(),
-        onWorksClick ? () => onWorksClick() : undefined
+        () => worksRef.current?.()
       );
     } catch {
       /* WebGL unavailable: headline still renders */
     }
     return () => ribbon?.dispose();
-  }, [onWorksClick]);
+  }, [itemsKey]);
 
   return (
     <div id="works-reel" ref={root} className="vr-track">

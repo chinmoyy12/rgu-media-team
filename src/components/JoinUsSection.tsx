@@ -1,5 +1,6 @@
 import React from 'react';
 import { EventCountdown } from './EventCountdown';
+import { config } from '../config';
 import {
   Sparkles,
   ArrowRight,
@@ -49,7 +50,7 @@ export const JoinUsSection: React.FC<JoinUsSectionProps> = ({ onApplyClick }) =>
           <div className="max-w-3xl mx-auto mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F26A2E]/15 border border-[#F26A2E]/40 text-[#F26A2E] font-mono text-xs font-semibold mb-4">
               <Sparkles className="w-4 h-4 animate-spin" />
-              <span>RECRUITMENT DRIVE 2026-27</span>
+              <span>RECRUITMENT DRIVE {config.recruitment.academicYear}</span>
             </div>
 
             <h2 className="font-cinzel text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4">
